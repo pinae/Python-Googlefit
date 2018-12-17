@@ -4,10 +4,10 @@ from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt, QUrl, pyqtSignal
-from google_fit_activity_types import activity_map
 from requests_oauthlib import OAuth2Session
 from urllib.parse import parse_qs
-from datetime import datetime, timedelta
+from datetime import timedelta
+from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
 import time
 import json
 import sys
@@ -22,6 +22,11 @@ class MainWindow(QWidget):
         self.setWindowTitle('fit.py')
         self.google_fit = None
         self.data_sources = []
+        self.load_data_sources_thread = None
+        self.workouts = []
+        self.load_workouts_thread = None
+        self.weights = []
+        self.load_weights_thread = None
         self.loginBrowser = None
         self.header_label = QLabel()
         self.header_label.setText("Google Fit")
@@ -39,9 +44,7 @@ class MainWindow(QWidget):
         if type(self.google_fit) is OAuth2Session:
             self.loginBrowser = None
             self.layout.addWidget(self.header_label)
-            self.load_data_sources()
-            self.load_workouts()
-            self.load_weight()
+            self.load_all_data()
         else:
             self.loginBrowser = Browser()
             self.loginBrowser.titleChanged.connect(self.change_title)
@@ -77,9 +80,13 @@ class MainWindow(QWidget):
         self.layout_window()
 
     def load_data_sources(self):
-        response = self.google_fit.get("https://www.googleapis.com/fitness/v1/users/me/dataSources")
-        self.data_sources = response.json()['dataSource']
-        for source in response.json()['dataSource']:
+        self.load_data_sources_thread = LoadDataSources(self.load_data_sources_callback, self.google_fit)
+        self.load_data_sources_thread.start()
+
+    def load_data_sources_callback(self, data_sources):
+        self.data_sources = data_sources
+        self.load_all_data()
+        for source in self.data_sources:
             print("Data source: " + source['dataStreamId'])
             print("Type: " + source['dataType']['name'])
             for field in source['dataType']['field']:
@@ -97,36 +104,37 @@ class MainWindow(QWidget):
                     source['device']['uid']))
             print("---------------------------------------------")
 
+    def load_all_data(self):
+        if not self.data_sources:
+            self.load_data_sources()
+        else:
+            self.load_workouts()
+            self.load_weight()
+
     def load_workouts(self):
-        workouts = []
-        for source in self.data_sources:
-            if source['dataType']['name'] == "com.google.activity.segment":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
-                    source['dataStreamId'] + "/datasets/" +
-                    str(int((datetime.now() - timedelta(days=7)).timestamp()*1000000000)) + "-" +
-                    str(int(time.time()*1000000000)))
-                for activity in response.json()['point']:
-                    if activity['value'][0]['intVal'] in activity_map.keys():
-                        print("- {} ({} - {})".format(
-                            activity_map[activity['value'][0]['intVal']],
-                            str(datetime.fromtimestamp(int(activity['startTimeNanos']) / 1000000000)),
-                            str(datetime.fromtimestamp(int(activity['endTimeNanos']) / 1000000000))))
-                    else:
-                        print("Unknown Activity: " + str(activity['value'][0]['intVal']))
+        self.load_workouts_thread = LoadWorkouts(self.load_workouts_callback, self.google_fit, self.data_sources,
+                                                 time_window=timedelta(days=7))
+        self.load_workouts_thread.start()
+
+    def load_workouts_callback(self, workouts):
+        self.workouts = workouts
+        for workout in self.workouts:
+            print("- {} ({} - {})".format(
+                workout['activity'],
+                str(workout['start_time']),
+                str(workout['end_time'])))
 
     def load_weight(self):
-        for source in self.data_sources:
-            if source['dataType']['name'] == "com.google.weight":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
-                    source['dataStreamId'] + "/datasets/" +
-                    str(int((datetime.now() - timedelta(days=365)).timestamp() * 1000000000)) + "-" +
-                    str(int(time.time() * 1000000000)))
-                for activity in response.json()['point']:
-                    print("Gewicht {}kg am {}.".format(
-                        activity['value'][0]['fpVal'],
-                        str(datetime.fromtimestamp(int(activity['startTimeNanos']) / 1000000000))))
+        self.load_weights_thread = LoadWeights(self.load_weight_callback, self.google_fit, self.data_sources,
+                                               time_window=timedelta(days=365))
+        self.load_weights_thread.start()
+
+    def load_weight_callback(self, weights):
+        self.weights = weights
+        for weight in self.weights:
+            print("Gewicht {}kg am {}.".format(
+                weight['weight'],
+                str(weight['time'])))
 
 
 class Browser(QWebEngineView):
