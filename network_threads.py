@@ -42,6 +42,7 @@ class LoadWorkouts(Thread):
                             "activity": activity_map[activity['value'][0]['intVal']]
                             if activity['value'][0]['intVal'] in activity_map.keys() else
                             "unknown activity with no. " + str(activity['value'][0]['intVal']),
+                            "activity_no": activity_map[activity['value'][0]['intVal']],
                             "start_time": datetime.fromtimestamp(int(activity['startTimeNanos']) / 1000000000),
                             "end_time": datetime.fromtimestamp(int(activity['endTimeNanos']) / 1000000000)
                         }
