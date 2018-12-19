@@ -1,14 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
-from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt, QUrl, pyqtSignal
+from translator import Translator
+from timed_diagram import TimedLineChart, TimedActivityBlockDiagram
+from pane_switcher import PaneSwitcher
+from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
-from urllib.parse import parse_qs
-from datetime import timedelta
+from datetime import timedelta, datetime
 from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
-import time
+from browser_widget import Browser
+from test_data import guesser_data, weight_data, activity_data
 import json
 import sys
 
@@ -19,7 +22,8 @@ class MainWindow(QWidget):
             flags=Qt.WindowTitleHint | Qt.WindowCloseButtonHint |
             Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint)
         self.setGeometry(0, 0, 800, 1000)
-        self.setWindowTitle('fit.py')
+        self.translator = Translator('de')
+        self.setWindowTitle(self.translator['window_title'])
         self.google_fit = None
         self.data_sources = []
         self.load_data_sources_thread = None
@@ -27,10 +31,16 @@ class MainWindow(QWidget):
         self.load_workouts_thread = None
         self.weights = []
         self.load_weights_thread = None
+        self.pane_switcher = PaneSwitcher(self.translator)
+        self.weight_diagram = TimedLineChart()
+        self.weight_diagram.set_data(weight_data)
+        guesser = CalorieGuesser(*guesser_data)
+        self.activity_diagram = TimedActivityBlockDiagram(guesser)
+        self.activity_diagram.set_data(activity_data)
         self.loginBrowser = None
         self.header_label = QLabel()
         self.header_label.setText("Google Fit")
-        self.layout = QHBoxLayout()
+        self.layout = QVBoxLayout()
         self.layout_window()
         self.setLayout(self.layout)
         self.show()
@@ -41,14 +51,17 @@ class MainWindow(QWidget):
 
     def layout_window(self):
         self.clear_layout()
-        if type(self.google_fit) is OAuth2Session:
+        if type(self.google_fit) is OAuth2Session or True:
             self.loginBrowser = None
+            self.layout.addWidget(self.pane_switcher)
             self.layout.addWidget(self.header_label)
-            self.load_all_data()
+            self.layout.addWidget(self.weight_diagram)
+            self.layout.addWidget(self.activity_diagram)
+            #self.load_all_data()
         else:
             self.loginBrowser = Browser()
             self.loginBrowser.titleChanged.connect(self.change_title)
-            self.loginBrowser.approvalCode_recieved.connect(self.process_token)
+            self.loginBrowser.approvalCode_received.connect(self.process_token)
             self.layout.addWidget(self.loginBrowser)
             self.start_google_login()
 
@@ -135,28 +148,6 @@ class MainWindow(QWidget):
             print("Gewicht {}kg am {}.".format(
                 weight['weight'],
                 str(weight['time'])))
-
-
-class Browser(QWebEngineView):
-    approvalCode_recieved = pyqtSignal(str)
-    titleChanged = pyqtSignal(str)
-
-    def __init__(self):
-        self.view = QWebEngineView.__init__(self)
-        self.setGeometry(0, 0, 800, 1000)
-        self.titleChanged.connect(self.adjust_title)
-        self.loadFinished.connect(self.page_loaded)
-
-    def load(self, url):
-        self.setUrl(QUrl(url))
-
-    def adjust_title(self):
-        self.titleChanged.emit(self.title())
-
-    def page_loaded(self):
-        url = self.url().toString()
-        if url.startswith("https://accounts.google.com/o/oauth2/approval/v2"):
-            self.approvalCode_recieved.emit(parse_qs(url)['approvalCode'][0])
 
 
 if __name__ == "__main__":
