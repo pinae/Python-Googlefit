@@ -4,14 +4,15 @@ from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt, QUrl, pyqtSignal
 from translator import Translator
-from timed_diagram import TimedLineChart, TimedActivityBlockDiagram
+from activity_pane import ActivityPane
+from nutrients_weight_pane import NutrientsWeightPane
 from pane_switcher import PaneSwitcher
 from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import timedelta, datetime
 from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
 from browser_widget import Browser
-from test_data import guesser_data, weight_data, activity_data
+from test_data import guesser_data
 import json
 import sys
 
@@ -31,16 +32,17 @@ class MainWindow(QWidget):
         self.load_workouts_thread = None
         self.weights = []
         self.load_weights_thread = None
-        self.pane_switcher = PaneSwitcher(self.translator)
-        self.weight_diagram = TimedLineChart()
-        self.weight_diagram.set_data(weight_data)
         guesser = CalorieGuesser(*guesser_data)
-        self.activity_diagram = TimedActivityBlockDiagram(guesser)
-        self.activity_diagram.set_data(activity_data)
+        self.activity_pane = ActivityPane(self.translator, guesser)
+        self.nutrients_weight_pane = NutrientsWeightPane(self.translator)
+        self.panes = [self.activity_pane, self.nutrients_weight_pane]
+        self.pane_switcher = PaneSwitcher(self.translator)
+        self.pane_switcher.pane_no_selected.connect(self.layout_window)
         self.loginBrowser = None
         self.header_label = QLabel()
         self.header_label.setText("Google Fit")
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout_window()
         self.setLayout(self.layout)
         self.show()
@@ -49,15 +51,15 @@ class MainWindow(QWidget):
         for i in reversed(range(self.layout.count())):
             self.layout.itemAt(i).widget().setParent(None)
 
-    def layout_window(self):
+    def layout_window(self, active_pane_no=None):
         self.clear_layout()
         if type(self.google_fit) is OAuth2Session or True:
             self.loginBrowser = None
             self.layout.addWidget(self.pane_switcher)
-            self.layout.addWidget(self.header_label)
-            self.layout.addWidget(self.weight_diagram)
-            self.layout.addWidget(self.activity_diagram)
-            #self.load_all_data()
+            if active_pane_no is None:
+                active_pane_no = self.pane_switcher.get_active_pane_no()
+            pane = self.panes[active_pane_no]
+            self.layout.addWidget(pane)
         else:
             self.loginBrowser = Browser()
             self.loginBrowser.titleChanged.connect(self.change_title)
@@ -90,6 +92,7 @@ class MainWindow(QWidget):
             code=token)
         print(token)
         print("Oauth finished")
+        # self.load_all_data()
         self.layout_window()
 
     def load_data_sources(self):

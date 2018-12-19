@@ -93,6 +93,8 @@ class PaneSelectItem(QWidget):
 
 
 class PaneSwitcher(QWidget):
+    pane_no_selected = pyqtSignal(int)
+
     def __init__(self, translator):
         super(PaneSwitcher, self).__init__()
         self.translator = translator
@@ -126,3 +128,11 @@ class PaneSwitcher(QWidget):
             if pane_widget == pane:
                 self.active_pane = i
         self.update_active_pane()
+        self.pane_no_selected.emit(self.active_pane)
+
+    def set_pane(self, pane_no):
+        self.active_pane = pane_no
+        self.update_active_pane()
+
+    def get_active_pane_no(self):
+        return self.active_pane
