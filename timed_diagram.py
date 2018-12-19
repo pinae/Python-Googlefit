@@ -267,6 +267,8 @@ class TimedLineChart(TimedDigram):
 class TimedActivityBlockDiagram(TimedDigram):
     def __init__(self, calorie_guesser, padding=4, y_unit="kcal/h", y_format="{:3.0f}", *args):
         super(TimedActivityBlockDiagram, self).__init__(padding=padding, y_unit=y_unit, y_format=y_format, *args)
+        self.setMinimumHeight(50)
+        self.setMinimumWidth(100)
         self.calorie_guesser = calorie_guesser
         self.inactive_pen_color = QColor(212, 175, 0)
         self.inactive_brush_color = QColor(236, 207, 71)

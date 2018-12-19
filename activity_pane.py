@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
-from timed_diagram import TimedActivityBlockDiagram
+from activity_widgets import ActivityDay
 from test_data import activity_data
 
 
@@ -11,7 +11,7 @@ class ActivityPane(QWidget):
         super(ActivityPane, self).__init__()
         self.translator = translator
         self.layout = QVBoxLayout()
-        self.activity_diagram = TimedActivityBlockDiagram(guesser)
-        self.activity_diagram.set_data(activity_data)
-        self.layout.addWidget(self.activity_diagram)
+        self.day_widget = ActivityDay(activity_data, guesser)
+        self.layout.addWidget(self.day_widget)
+        self.layout.addStretch()
         self.setLayout(self.layout)
