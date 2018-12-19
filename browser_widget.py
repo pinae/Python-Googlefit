@@ -12,7 +12,6 @@ class Browser(QWebEngineView):
 
     def __init__(self):
         self.view = QWebEngineView.__init__(self)
-        self.setGeometry(0, 0, 800, 1000)
         self.titleChanged.connect(self.adjust_title)
         self.loadFinished.connect(self.page_loaded)
 
