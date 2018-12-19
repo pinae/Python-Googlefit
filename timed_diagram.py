@@ -427,7 +427,6 @@ class TimedActivityBlockDiagram(TimedDigram):
                 max_y = max(max_y, self.calorie_estimates[i] *
                             timedelta(hours=1) / (point['end_time'] - point['start_time']))
             self.x_range = min_x, max_x
-            self.x_range = datetime(2018, 12, 18, 0, 0), datetime(2018, 12, 19, 0, 0)
             self.y_range = min_y, max_y
         else:
             self.x_range = datetime.now(), datetime.now()
