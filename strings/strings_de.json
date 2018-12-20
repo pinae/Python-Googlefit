@@ -1,4 +1,7 @@
 {
+  "activity_end_time_label": "Endzeit:",
+  "activity_name_label": "Aktivit\u00e4t:",
+  "activity_start_time_label": "Startzeit:",
   "fitness_pane_title": "Fitness",
   "food_tracking_pane_title": "Food-Tracking",
   "window_title": "fit.py"

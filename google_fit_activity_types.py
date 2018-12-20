@@ -119,3 +119,6 @@ activity_map = {
     100: "Yoga",
     101: "Zumba"
 }
+activity_number_map = {}
+for index in activity_map.keys():
+    activity_number_map[activity_map[index]] = index

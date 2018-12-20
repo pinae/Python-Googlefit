@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QScrollArea, QSizePolicy
 from PyQt5.QtCore import Qt, QUrl, pyqtSignal
 from translator import Translator
 from activity_pane import ActivityPane
@@ -34,13 +34,20 @@ class MainWindow(QWidget):
         self.load_weights_thread = None
         guesser = CalorieGuesser(*guesser_data)
         self.activity_pane = ActivityPane(self.translator, guesser)
+        self.activity_pane.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+        self.activity_pane_scroll_area = QScrollArea()
+        self.activity_pane_scroll_area.setWidgetResizable(True)
+        self.activity_pane_scroll_area.setContentsMargins(0, 0, 0, 0)
+        self.activity_pane_scroll_area.setWidget(self.activity_pane)
         self.nutrients_weight_pane = NutrientsWeightPane(self.translator)
-        self.panes = [self.activity_pane, self.nutrients_weight_pane]
+        self.nutrients_weight_pane_scroll_area = QScrollArea()
+        self.nutrients_weight_pane_scroll_area.setWidgetResizable(True)
+        self.nutrients_weight_pane_scroll_area.setContentsMargins(0, 0, 0, 0)
+        self.nutrients_weight_pane_scroll_area.setWidget(self.nutrients_weight_pane)
+        self.panes = [self.activity_pane_scroll_area, self.nutrients_weight_pane_scroll_area]
         self.pane_switcher = PaneSwitcher(self.translator)
         self.pane_switcher.pane_no_selected.connect(self.layout_window)
         self.loginBrowser = None
-        self.header_label = QLabel()
-        self.header_label.setText("Google Fit")
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout_window()
