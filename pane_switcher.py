@@ -55,6 +55,7 @@ class PaneSelectItem(QWidget):
 
     def set_active(self, state):
         self.active = state
+        self.icon_active.setVisible(self.active)
         if self.active:
             palette = self.palette()
             palette.setColor(self.backgroundRole(), self.active_color)
@@ -65,6 +66,7 @@ class PaneSelectItem(QWidget):
             self.icon_layout.itemAt(1).widget().setParent(None)
             self.icon_layout.insertWidget(1, self.icon_active)
         else:
+            self.icon_inactive.setVisible(True)
             palette = self.palette()
             palette.setColor(self.backgroundRole(), self.background_color)
             self.setPalette(palette)
@@ -76,6 +78,8 @@ class PaneSelectItem(QWidget):
 
     def enterEvent(self, event):
         if not self.active:
+            self.icon_hover.setVisible(True)
+            self.icon_inactive.setVisible(False)
             self.icon_layout.itemAt(1).widget().setParent(None)
             self.icon_layout.insertWidget(1, self.icon_hover)
         if self.label is not None:
@@ -83,6 +87,8 @@ class PaneSelectItem(QWidget):
 
     def leaveEvent(self, event):
         if not self.active:
+            self.icon_hover.setVisible(False)
+            self.icon_inactive.setVisible(True)
             self.icon_layout.itemAt(1).widget().setParent(None)
             self.icon_layout.insertWidget(1, self.icon_inactive)
         if self.label is not None:
