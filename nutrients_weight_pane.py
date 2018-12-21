@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from timed_diagram import TimedLineChart
-from test_data import weight_data
+from tests.test_data import weight_data
 
 
 class NutrientsWeightPane(QWidget):

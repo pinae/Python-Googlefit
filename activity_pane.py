@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from activity_widgets import ActivityDay
-from test_data import activity_data
+from tests.test_data import activity_data
 
 
 class ActivityPane(QWidget):

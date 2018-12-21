@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QScrollArea, QSizePolicy
-from PyQt5.QtCore import Qt, QUrl, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QScrollArea, QSizePolicy
+from PyQt5.QtCore import Qt
 from translator import Translator
 from activity_pane import ActivityPane
 from nutrients_weight_pane import NutrientsWeightPane
 from pane_switcher import PaneSwitcher
 from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
-from datetime import timedelta, datetime
+from datetime import timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
 from browser_widget import Browser
-from test_data import guesser_data
+from tests.test_data import guesser_data
 import json
 import sys
 
