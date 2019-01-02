@@ -9,10 +9,10 @@ from os import path
 
 
 class PaneSelectItem(QWidget):
-    paneSelected = pyqtSignal(QWidget)
+    pane_selected = pyqtSignal(QWidget)
 
-    def __init__(self, icon_inactive_filename, icon_active_filename, icon_hover_filename, label_text=None):
-        super(PaneSelectItem, self).__init__()
+    def __init__(self, icon_inactive_filename, icon_active_filename, icon_hover_filename, label_text=None, *args):
+        super(PaneSelectItem, self).__init__(*args)
         self.setMouseTracking(True)
         self.setAutoFillBackground(True)
         self.active = False
@@ -26,9 +26,13 @@ class PaneSelectItem(QWidget):
         self.set_icon_size(self.icon_inactive, 200, 43)
         self.icon_active = QSvgWidget(icon_active_filename)
         self.set_icon_size(self.icon_active, 200, 43)
+        self.icon_active.setVisible(False)
         self.icon_hover = QSvgWidget(icon_hover_filename)
         self.set_icon_size(self.icon_hover, 200, 43)
+        self.icon_hover.setVisible(False)
         self.icon_layout.addWidget(self.icon_inactive)
+        self.icon_layout.addWidget(self.icon_active)
+        self.icon_layout.addWidget(self.icon_hover)
         self.icon_layout.addStretch()
         self.v_layout.addLayout(self.icon_layout)
         if label_text is not None:
@@ -63,15 +67,16 @@ class PaneSelectItem(QWidget):
             if self.label is not None:
                 self.label.setVisible(True)
                 self.label.setStyleSheet("color: #000000;")
-            self.icon_layout.itemAt(1).widget().setParent(None)
-            self.icon_layout.insertWidget(1, self.icon_active)
+            self.icon_active.setVisible(True)
+            self.icon_inactive.setVisible(False)
+            self.icon_hover.setVisible(False)
         else:
             self.icon_inactive.setVisible(True)
+            self.icon_hover.setVisible(False)
+            self.icon_active.setVisible(False)
             palette = self.palette()
             palette.setColor(self.backgroundRole(), self.background_color)
             self.setPalette(palette)
-            self.icon_layout.itemAt(1).widget().setParent(None)
-            self.icon_layout.insertWidget(1, self.icon_inactive)
             if self.label is not None:
                 self.label.setVisible(False)
                 self.label.setStyleSheet("QLabel {color: #ffffff;}")
@@ -80,8 +85,7 @@ class PaneSelectItem(QWidget):
         if not self.active:
             self.icon_hover.setVisible(True)
             self.icon_inactive.setVisible(False)
-            self.icon_layout.itemAt(1).widget().setParent(None)
-            self.icon_layout.insertWidget(1, self.icon_hover)
+            self.icon_active.setVisible(False)
         if self.label is not None:
             self.label.setVisible(True)
 
@@ -89,13 +93,12 @@ class PaneSelectItem(QWidget):
         if not self.active:
             self.icon_hover.setVisible(False)
             self.icon_inactive.setVisible(True)
-            self.icon_layout.itemAt(1).widget().setParent(None)
-            self.icon_layout.insertWidget(1, self.icon_inactive)
+            self.icon_active.setVisible(False)
         if self.label is not None:
             self.label.setVisible(self.active)
 
     def mousePressEvent(self, event):
-        self.paneSelected.emit(self)
+        self.pane_selected.emit(self)
 
 
 class PaneSwitcher(QWidget):
@@ -111,13 +114,13 @@ class PaneSwitcher(QWidget):
                                          path.join("pixmaps", "activities_black.svg"),
                                          path.join("pixmaps", "activities_white.svg"),
                                          self.translator['fitness_pane_title'])
-        self.activities.paneSelected.connect(self.pane_selected)
+        self.activities.pane_selected.connect(self.pane_selected)
         self.panes.append(self.activities)
         self.nutriweight = PaneSelectItem(path.join("pixmaps", "nutrients_weight_gray.svg"),
                                           path.join("pixmaps", "nutrients_weight_black.svg"),
                                           path.join("pixmaps", "nutrients_weight_white.svg"),
                                           self.translator['food_tracking_pane_title'])
-        self.nutriweight.paneSelected.connect(self.pane_selected)
+        self.nutriweight.pane_selected.connect(self.pane_selected)
         self.panes.append(self.nutriweight)
         self.layout = QHBoxLayout()
         for pane in self.panes:

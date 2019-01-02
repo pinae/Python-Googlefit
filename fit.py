@@ -57,13 +57,15 @@ class MainWindow(QWidget):
         self.show()
 
     def layout_window(self, active_pane_no=None):
-        clear_layout(self.layout)
+        clear_layout(self.layout, [self.pane_switcher] + self.panes)
         if type(self.google_fit) is OAuth2Session:
             self.loginBrowser = None
             self.layout.addWidget(self.pane_switcher)
+            self.pane_switcher.setVisible(True)
             if active_pane_no is None:
                 active_pane_no = self.pane_switcher.get_active_pane_no()
             pane = self.panes[active_pane_no]
+            pane.setVisible(True)
             self.layout.addWidget(pane)
         else:
             self.loginBrowser = Browser()
