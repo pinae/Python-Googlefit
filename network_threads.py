@@ -7,27 +7,25 @@ from datetime import datetime, timedelta
 from google_fit_activity_types import activity_map
 
 
-class LoadDataSources(Thread, QObject):
+class LoadThread(Thread, QObject):
     data_loaded = pyqtSignal(list)
 
     def __init__(self, google_fit, *args):
-        super(LoadDataSources, self).__init__()
+        super(LoadThread, self).__init__()
         QObject.__init__(self, *args)
         self.google_fit = google_fit
 
+
+class LoadDataSources(LoadThread):
     def run(self):
         response = self.google_fit.get("https://www.googleapis.com/fitness/v1/users/me/dataSources")
         self.data_loaded.emit(response.json()['dataSource'])
         super(LoadDataSources, self).run()
 
 
-class LoadWorkouts(Thread, QObject):
-    data_loaded = pyqtSignal(list)
-
+class LoadWorkouts(LoadThread):
     def __init__(self, google_fit, data_sources, *args, time_window=timedelta(days=7)):
-        super(LoadWorkouts, self).__init__()
-        QObject.__init__(self, *args)
-        self.google_fit = google_fit
+        super(LoadWorkouts, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
 
@@ -56,13 +54,9 @@ class LoadWorkouts(Thread, QObject):
         super(LoadWorkouts, self).run()
 
 
-class LoadWeights(Thread, QObject):
-    data_loaded = pyqtSignal(list)
-
+class LoadWeights(LoadThread):
     def __init__(self, google_fit, data_sources, *args, time_window=timedelta(days=365)):
-        super(LoadWeights, self).__init__()
-        QObject.__init__(self, *args)
-        self.google_fit = google_fit
+        super(LoadWeights, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
 
