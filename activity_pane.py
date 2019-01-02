@@ -1,29 +1,38 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSpacerItem, QWidgetItem, QLabel
 from activity_widgets import ActivityDay
-from tests.test_data import activity_data
+from activity_tools import activities_to_days
+from layout_helpers import clear_layout
 
 
 class ActivityPane(QWidget):
     def __init__(self, translator, guesser):
         super(ActivityPane, self).__init__()
+        self.guesser = guesser
         self.translator = translator
+        self.days = []
         self.layout = QVBoxLayout()
-        self.monday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.monday_widget)
-        self.tuesday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.tuesday_widget)
-        self.wednesday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.wednesday_widget)
-        self.tuesday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.tuesday_widget)
-        self.friday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.friday_widget)
-        self.saturday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.saturday_widget)
-        self.sunday_widget = ActivityDay(activity_data, guesser, translator)
-        self.layout.addWidget(self.sunday_widget)
-        self.layout.addStretch()
         self.setLayout(self.layout)
+        self.layout_pane()
+
+    def layout_pane(self):
+        clear_layout(self.layout)
+        if len(self.days) == 0:
+            empty_notice = QLabel()
+            empty_notice.setText(self.translator['no_activities_to_show'])
+            self.layout.addWidget(empty_notice)
+        for day in self.days:
+            day_widget = ActivityDay(day, self.guesser, self.translator)
+            day_widget.setVisible(True)
+            self.layout.addWidget(day_widget)
+        self.layout.addStretch()
+        self.update()
+
+    def set_activities(self, activities):
+        self.days = activities_to_days(activities)
+        self.layout_pane()
+        for day in self.days:
+            print(day)
+        print("Data loaded")

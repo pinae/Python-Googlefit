@@ -12,7 +12,9 @@ from requests_oauthlib import OAuth2Session
 from datetime import timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
 from browser_widget import Browser
+from layout_helpers import clear_layout
 from tests.test_data import guesser_data
+from tests.print_helpers import print_weights
 import json
 import sys
 
@@ -54,13 +56,9 @@ class MainWindow(QWidget):
         self.setLayout(self.layout)
         self.show()
 
-    def clear_layout(self):
-        for i in reversed(range(self.layout.count())):
-            self.layout.itemAt(i).widget().setParent(None)
-
     def layout_window(self, active_pane_no=None):
-        self.clear_layout()
-        if type(self.google_fit) is OAuth2Session or True:
+        clear_layout(self.layout)
+        if type(self.google_fit) is OAuth2Session:
             self.loginBrowser = None
             self.layout.addWidget(self.pane_switcher)
             if active_pane_no is None:
@@ -99,65 +97,52 @@ class MainWindow(QWidget):
             code=token)
         print(token)
         print("Oauth finished")
-        # self.load_all_data()
+        self.load_all_data()
         self.layout_window()
 
     def load_data_sources(self):
-        self.load_data_sources_thread = LoadDataSources(self.load_data_sources_callback, self.google_fit)
+        self.load_data_sources_thread = LoadDataSources(self.google_fit)
+        self.load_data_sources_thread.data_loaded.connect(
+            self.load_data_sources_callback,
+            type=Qt.QueuedConnection)
         self.load_data_sources_thread.start()
 
     def load_data_sources_callback(self, data_sources):
         self.data_sources = data_sources
         self.load_all_data()
-        for source in self.data_sources:
-            print("Data source: " + source['dataStreamId'])
-            print("Type: " + source['dataType']['name'])
-            for field in source['dataType']['field']:
-                print("  - {}: {} {}".format(
-                    field['format'],
-                    field['name'],
-                    "(optional)" if 'optional' in field and field['optional'] else ""))
-            if 'application' in source:
-                print("App: " + source['application']['packageName'])
-            if 'device' in source:
-                print("Gerät: {} - {} (Typ: {} mit uid: {})".format(
-                    source['device']['manufacturer'],
-                    source['device']['model'],
-                    source['device']['type'],
-                    source['device']['uid']))
-            print("---------------------------------------------")
+        #print_data_sources(self.data_sources)
 
     def load_all_data(self):
         if not self.data_sources:
             self.load_data_sources()
         else:
             self.load_workouts()
-            self.load_weight()
+            #self.load_weight()
 
     def load_workouts(self):
-        self.load_workouts_thread = LoadWorkouts(self.load_workouts_callback, self.google_fit, self.data_sources,
-                                                 time_window=timedelta(days=7))
+        self.load_workouts_thread = LoadWorkouts(self.google_fit, self.data_sources,
+                                                 time_window=timedelta(days=2))
+        self.load_workouts_thread.data_loaded.connect(
+            self.load_workouts_callback,
+            type=Qt.QueuedConnection)
         self.load_workouts_thread.start()
 
     def load_workouts_callback(self, workouts):
         self.workouts = workouts
-        for workout in self.workouts:
-            print("- {} ({} - {})".format(
-                workout['activity'],
-                str(workout['start_time']),
-                str(workout['end_time'])))
+        self.activity_pane.set_activities(self.workouts)
+        #print_workouts(self.workouts)
 
     def load_weight(self):
-        self.load_weights_thread = LoadWeights(self.load_weight_callback, self.google_fit, self.data_sources,
+        self.load_weights_thread = LoadWeights(self.google_fit, self.data_sources,
                                                time_window=timedelta(days=365))
+        self.load_weights_thread.data_loaded.connect(
+            self.load_weight_callback,
+            type=Qt.QueuedConnection)
         self.load_weights_thread.start()
 
     def load_weight_callback(self, weights):
         self.weights = weights
-        for weight in self.weights:
-            print("Gewicht {}kg am {}.".format(
-                weight['weight'],
-                str(weight['time'])))
+        print_weights(self.weights)
 
 
 if __name__ == "__main__":

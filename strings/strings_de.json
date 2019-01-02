@@ -4,5 +4,6 @@
   "activity_start_time_label": "Startzeit:",
   "fitness_pane_title": "Fitness",
   "food_tracking_pane_title": "Food-Tracking",
+  "no_activities_to_show": "Keine Aktivitäten ...",
   "window_title": "fit.py"
 }

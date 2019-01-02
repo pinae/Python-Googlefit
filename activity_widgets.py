@@ -4,8 +4,10 @@ from __future__ import division, print_function, unicode_literals
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt5.QtWidgets import QDateTimeEdit, QComboBox
+from activity_tools import fill_day_with_unknown
 from timed_diagram import TimedActivityBlockDiagram
 from google_fit_activity_types import activity_number_map
+from layout_helpers import clear_layout
 import abc
 
 
@@ -24,7 +26,8 @@ class ActivityDay(QWidget):
         self.expand_button.clicked.connect(self.toggle_expanded)
         diagram_layout.addWidget(self.expand_button)
         self.activity_diagram = TimedActivityBlockDiagram(self.guesser)
-        self.activity_diagram.set_data(self.activities)
+        self.activity_diagram.setMinimumHeight(150)
+        self.activity_diagram.set_data(fill_day_with_unknown(self.activities))
         diagram_layout.addWidget(self.activity_diagram, stretch=1)
         main_layout.addLayout(diagram_layout)
         self.list_layout = QVBoxLayout()
@@ -34,8 +37,7 @@ class ActivityDay(QWidget):
         self.update_activity_list()
 
     def update_activity_list(self):
-        for i in reversed(range(self.list_layout.count())):
-            self.list_layout.itemAt(i).widget().setParent(None)
+        clear_layout(self.list_layout)
         if self.expanded:
             for i, activity in enumerate(self.activities):
                 if i == self.edit:
@@ -55,6 +57,11 @@ class ActivityDay(QWidget):
 
     def activity_clicked(self, activity, number):
         self.edit = number
+        self.update_activity_list()
+
+    def set_day(self, activities):
+        self.activities = activities
+        self.activity_diagram.set_data(fill_day_with_unknown(self.activities))
         self.update_activity_list()
 
 
