@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-from PyQt5.QtWidgets import QDateTimeEdit, QComboBox
+from PyQt5.QtWidgets import QDateTimeEdit, QComboBox, QDoubleSpinBox
 from activity_tools import fill_day_with_unknown
 from timed_diagram import TimedActivityBlockDiagram
 from google_fit_activity_types import activity_number_map
@@ -41,7 +41,7 @@ class ActivityDay(QWidget):
         if self.expanded:
             for i, activity in enumerate(self.activities):
                 if i == self.edit:
-                    item_widget = EditActivity(activity, i, self.translator)
+                    item_widget = EditActivity(activity, i, self.translator, self.guesser)
                 else:
                     item_widget = DisplayActivity(activity, i, self.translator, self.guesser)
                     item_widget.activity_clicked.connect(self.activity_clicked)
@@ -95,13 +95,23 @@ class AbstractActivityWidget(QWidget):
 
 
 class EditActivity(AbstractActivityWidget):
-    def __init__(self, activity, number, translator, *args):
+    def __init__(self, activity, number, translator, guesser, *args):
+        self.guesser = guesser
         self.name_label = QLabel()
         self.name_edit = QComboBox()
+        self.name_edit.currentTextChanged.connect(self.check_for_change)
         self.start_time_label = QLabel()
         self.start_time_edit = QDateTimeEdit()
+        self.start_time_edit.dateTimeChanged.connect(self.check_for_change)
         self.end_time_label = QLabel()
         self.end_time_edit = QDateTimeEdit()
+        self.end_time_edit.dateTimeChanged.connect(self.check_for_change)
+        self.calories_label = QLabel()
+        self.calories_edit = QDoubleSpinBox()
+        self.calories_edit.valueChanged.connect(self.check_for_change)
+        self.save_button = QPushButton()
+        self.save_button.setText(translator.save_button)
+        self.save_button.setDisabled(True)
         self.margins = 0, 0, 0, 0
         self.label_edit_spacing = 4
         super(EditActivity, self).__init__(activity, number, translator, *args)
@@ -136,6 +146,42 @@ class EditActivity(AbstractActivityWidget):
         time_layout.addWidget(self.end_time_edit)
         time_wrapper.setLayout(time_layout)
         layout.addWidget(time_wrapper)
+        calories_save_wrapper = QWidget()
+        calories_save_wrapper.setContentsMargins(*self.margins)
+        calories_save_layout = QHBoxLayout()
+        calories_save_layout.setSpacing(self.label_edit_spacing)
+        self.calories_label.setText(self.translator.calories_label)
+        self.calories_edit.setRange(0, 4500)
+        self.calories_edit.setSingleStep(1)
+        self.calories_edit.setDecimals(3)
+        self.calories_edit.setValue(self.activity['calories'] if 'calories' in self.activity else
+                                    self.guesser.guess_kcal(self.activity))
+        calories_save_layout.addWidget(self.calories_label)
+        calories_save_layout.addWidget(self.calories_edit)
+        calories_save_layout.addStretch()
+        calories_save_layout.addWidget(self.save_button)
+        calories_save_wrapper.setLayout(calories_save_layout)
+        layout.addWidget(calories_save_wrapper)
+        self.check_for_change()
+
+    def check_for_change(self):
+        if (self.activity['activity'] != self.name_edit.currentText() or
+                self.activity['start_time'] != self.start_time_edit.dateTime().toPyDateTime() or
+                self.activity['end_time'] != self.end_time_edit.dateTime().toPyDateTime() or
+                ('calories' in self.activity and abs(self.activity['calories'] - self.calories_edit.value()) > 0.01) or
+                ('calories' not in self.activity and abs(
+                    self.guesser.guess_kcal(self.activity) - self.calories_edit.value()) > 0.01)):
+            changed_activity = {
+                'activity': self.name_edit.currentText(),
+                'activity_no': activity_number_map[self.name_edit.currentText()],
+                'start_time': self.start_time_edit.dateTime().toPyDateTime(),
+                'end_time': self.end_time_edit.dateTime().toPyDateTime()}
+            if (('calories' in self.activity and abs(self.activity['calories'] - self.calories_edit.value()) > 0.01) or
+                    abs(self.guesser.guess_kcal(self.activity) - self.calories_edit.value()) > 0.01):
+                changed_activity['calories'] = self.calories_edit.value()
+            self.save_button.setDisabled(False)
+        else:
+            self.save_button.setDisabled(True)
 
     def set_activity(self, activity):
         super(EditActivity, self).set_activity(activity)
