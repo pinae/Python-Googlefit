@@ -43,7 +43,7 @@ class ActivityDay(QWidget):
                 if i == self.edit:
                     item_widget = EditActivity(activity, i, self.translator)
                 else:
-                    item_widget = DisplayActivity(activity, i, self.translator)
+                    item_widget = DisplayActivity(activity, i, self.translator, self.guesser)
                     item_widget.activity_clicked.connect(self.activity_clicked)
                 self.list_layout.addWidget(item_widget)
         self.update()
@@ -144,7 +144,8 @@ class EditActivity(AbstractActivityWidget):
 class DisplayActivity(AbstractActivityWidget):
     activity_clicked = pyqtSignal(dict, int)
 
-    def __init__(self, activity, number, translator, *args):
+    def __init__(self, activity, number, translator, guesser, *args):
+        self.guesser = guesser
         self.activity_name = QLabel()
         self.time = QLabel()
         self.calories = QLabel()
@@ -173,7 +174,11 @@ class DisplayActivity(AbstractActivityWidget):
         duration = activity['end_time'] - activity['start_time']
         self.time.setText(activity['start_time'].strftime("%A, %d.%m.%Y %H:%M") + " - " +
                           activity['end_time'].strftime("%H:%M") + " (" + str(duration) + ")")
-        self.calories.setText("1000 kcal")
+        if 'calories' in activity:
+            self.calories.setText("{:5.1f} kcal".format(activity['calories']))
+        else:
+            self.calories.setText("{:5.1f} kcal".format(self.guesser.guess_kcal(activity)))
+            self.calories.setStyleSheet("font-size: 8pt; color: #ff5050;")
 
     def mousePressEvent(self, event):
         self.activity_clicked.emit(self.activity, self.number)

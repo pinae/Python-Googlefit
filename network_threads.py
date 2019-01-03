@@ -50,6 +50,27 @@ class LoadWorkouts(LoadThread):
                     if 'originDataSourceId' in activity:
                         workout["sourceId"] = activity['originDataSourceId']
                     workouts.append(workout)
+            if source['dataType']['name'] == "com.google.calories.expended":
+                response = self.google_fit.get(
+                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                    source['dataStreamId'] + "/datasets/" +
+                    str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
+                    str(int(datetime.now().timestamp() * 1000000000)))
+                # print(response.json()['dataSourceId'])
+                for point in response.json()['point']:
+                    calories_data_point = {
+                        "value": point['value'][0]['fpVal'],
+                        "start_time": datetime.fromtimestamp(int(point['startTimeNanos']) / 1000000000),
+                        "end_time": datetime.fromtimestamp(int(point['endTimeNanos']) / 1000000000)
+                    }
+                    # print("{:10.2f} kcal at {} - {}".format(calories_data_point['value'],
+                    #                                         calories_data_point['start_time'],
+                    #                                         calories_data_point['end_time']))
+                    for workout in workouts:
+                        if (timedelta(seconds=-1) < workout['start_time'] - calories_data_point['start_time'] <
+                                timedelta(seconds=1) and timedelta(seconds=-1) <
+                                workout['end_time'] - calories_data_point['end_time'] < timedelta(seconds=1)):
+                            workout['calories'] = calories_data_point['value']
         self.data_loaded.emit(workouts)
         super(LoadWorkouts, self).run()
 

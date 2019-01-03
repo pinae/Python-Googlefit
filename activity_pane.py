@@ -33,6 +33,3 @@ class ActivityPane(QWidget):
     def set_activities(self, activities):
         self.days = activities_to_days(activities)
         self.layout_pane()
-        for day in self.days:
-            print(day)
-        print("Data loaded")
