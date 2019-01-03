@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
 from datetime import datetime, timedelta
+from google_fit_activity_types import activity_map
 
 
 def trunc_datetime(dt):
@@ -71,3 +72,56 @@ def fill_day_with_unknown(day):
                 'end_time': next_time
             })
     return full_day
+
+
+def create_activity_priority_map():
+    automatic_activities = []
+    sleep_activities = []
+    unknown_activities = [
+        "Unknown (unable to detect activity)*",
+        "Tilting (sudden device gravity change)*",
+        "Still (not moving)*"]
+    for i in activity_map:
+        if activity_map[i].endswith("*"):
+            automatic_activities.append(activity_map[i])
+        if activity_map[i].find("sleep") > 0 or activity_map[i] == "Sleeping":
+            sleep_activities.append(activity_map[i])
+    activity_priority_map = {}
+    for i in activity_map:
+        if activity_map[i] in unknown_activities:
+            activity_priority_map[i] = unknown_activities.index(activity_map[i])
+        elif activity_map[i] in automatic_activities:
+            activity_priority_map[i] = automatic_activities.index(activity_map[i]) + len(unknown_activities)
+        elif activity_map[i].find("sleep") > 0 or activity_map[i] == "Sleeping":
+            activity_priority_map[i] = sleep_activities.index(activity_map[i]) + \
+                                       len(unknown_activities) + len(automatic_activities)
+        else:
+            activity_priority_map[i] = i + len(unknown_activities) + len(automatic_activities) + len(sleep_activities)
+    return activity_priority_map
+
+
+def clean_activities(activities):
+    activity_priority_map = create_activity_priority_map()
+    act = activities.copy()
+    act.sort(key=lambda x: activity_priority_map[x['activity_no']])
+    cleaned_activities = []
+    for activity in reversed(act):
+        activity_slices = [activity]
+        for ea in cleaned_activities:
+            for i, sl in enumerate(activity_slices):
+                if sl['start_time'] >= ea['start_time'] and sl['end_time'] <= ea['end_time']:
+                    activity_slices.pop(i)
+                elif (sl['end_time'] > ea['start_time'] and sl['start_time'] < ea['end_time']) or (
+                        sl['start_time'] < ea['end_time'] and sl['end_time'] > ea['start_time']):
+                    if sl['start_time'] >= ea['start_time'] and sl['end_time'] > ea['end_time']:
+                        sl['start_time'] = ea['end_time']
+                    elif sl['start_time'] < ea['start_time'] and sl['end_time'] <= ea['end_time']:
+                        sl['end_time'] = ea['start_time']
+                    elif sl['start_time'] < ea['start_time'] and sl['end_time'] > ea['end_time']:
+                        new_sl = sl.copy()
+                        sl['end_time'] = ea['start_time']
+                        new_sl['start_time'] = ea['end_time']
+                        activity_slices.append(new_sl)
+        cleaned_activities += activity_slices
+    cleaned_activities.sort(key=lambda x: x['start_time'], reverse=False)
+    return cleaned_activities

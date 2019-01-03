@@ -14,7 +14,8 @@ from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
-from tests.print_helpers import print_weights
+from tests.print_helpers import print_weights, print_data_sources, print_workouts
+from activity_tools import clean_activities
 import json
 import sys
 
@@ -112,14 +113,14 @@ class MainWindow(QWidget):
     def load_data_sources_callback(self, data_sources):
         self.data_sources = data_sources
         self.load_all_data()
-        #print_data_sources(self.data_sources)
+        # print_data_sources(self.data_sources)
 
     def load_all_data(self):
         if not self.data_sources:
             self.load_data_sources()
         else:
             self.load_workouts()
-            #self.load_weight()
+            self.load_weight()
 
     def load_workouts(self):
         self.load_workouts_thread = LoadWorkouts(self.google_fit, self.data_sources,
@@ -130,9 +131,9 @@ class MainWindow(QWidget):
         self.load_workouts_thread.start()
 
     def load_workouts_callback(self, workouts):
-        self.workouts = workouts
+        self.workouts = clean_activities(workouts)
         self.activity_pane.set_activities(self.workouts)
-        #print_workouts(self.workouts)
+        # print_workouts(self.workouts)
 
     def load_weight(self):
         self.load_weights_thread = LoadWeights(self.google_fit, self.data_sources,
@@ -144,7 +145,7 @@ class MainWindow(QWidget):
 
     def load_weight_callback(self, weights):
         self.weights = weights
-        print_weights(self.weights)
+        # print_weights(self.weights)
 
 
 if __name__ == "__main__":

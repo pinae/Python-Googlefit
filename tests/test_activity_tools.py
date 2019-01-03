@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
 from tests.test_data import activity_data
-from activity_tools import activities_to_days, fill_day_with_unknown
+from activity_tools import activities_to_days, fill_day_with_unknown, clean_activities
 from datetime import datetime
 import unittest
 
@@ -127,6 +127,38 @@ class TestFillDayWithBmr(unittest.TestCase):
             self.assertEqual(activity['activity_no'], full_day[i]['activity_no'])
             self.assertEqual(activity['start_time'], full_day[i]['start_time'])
             self.assertEqual(activity['end_time'], full_day[i]['end_time'])
+
+
+class TestCleanActivities(unittest.TestCase):
+    def test_no_cutting_needed(self):
+        cleaned_activities = clean_activities(activity_data)
+        self.assertEqual(len(activity_data), len(cleaned_activities))
+        for i, activity in enumerate(activity_data):
+            self.assertEqual(activity['activity'], cleaned_activities[i]['activity'])
+            self.assertEqual(activity['activity_no'], cleaned_activities[i]['activity_no'])
+            self.assertEqual(activity['start_time'], cleaned_activities[i]['start_time'])
+            self.assertEqual(activity['end_time'], cleaned_activities[i]['end_time'])
+
+    def test_cutting_and_deleting(self):
+        manipulated_activities = activity_data.copy()
+        manipulated_activities.insert(
+            3, {"activity": "Unknown (unable to detect activity)*", "activity_no": 4,
+                "start_time": datetime(year=2018, month=12, day=18, hour=10, minute=35),
+                "end_time": datetime(year=2018, month=12, day=18, hour=11, minute=42)})
+        manipulated_activities.insert(
+            7, {"activity": "Unknown (unable to detect activity)*", "activity_no": 4,
+                "start_time": datetime(year=2018, month=12, day=18, hour=20, minute=30),
+                "end_time": datetime(year=2018, month=12, day=18, hour=21, minute=10)})
+        cleaned_activities = clean_activities(manipulated_activities)
+        expected_activities = manipulated_activities.copy()
+        del expected_activities[7]
+        expected_activities[3]["start_time"] = datetime(year=2018, month=12, day=18, hour=10, minute=42)
+        self.assertEqual(len(expected_activities), len(cleaned_activities))
+        for i, activity in enumerate(expected_activities):
+            self.assertEqual(activity['activity'], cleaned_activities[i]['activity'])
+            self.assertEqual(activity['activity_no'], cleaned_activities[i]['activity_no'])
+            self.assertEqual(activity['start_time'], cleaned_activities[i]['start_time'])
+            self.assertEqual(activity['end_time'], cleaned_activities[i]['end_time'])
 
 
 if __name__ == '__main__':
