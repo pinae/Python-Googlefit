@@ -148,6 +148,6 @@ class CalorieGuesser(object):
     def guess_kcal(self, activity):
         activity_duration = activity['end_time'] - activity['start_time']
         if activity['activity_no'] in self.activity_met_map.keys():
-            return self.activity_met_map[activity['activity_no']] * self.bmr * activity_duration / timedelta(hours=24)
+            return self.activity_met_map[activity['activity_no']] * self.bmr * (activity_duration / timedelta(hours=24))
         else:
-            return self.bmr * activity_duration / timedelta(hours=24)
+            return self.bmr * (activity_duration / timedelta(hours=24))
