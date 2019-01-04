@@ -205,7 +205,6 @@ class MainWindow(QWidget):
         }
         for source in self.data_sources:
             for data_source_name in custom_data_sources.keys():
-                print("Checking if {} = {}".format(source['dataType']['name'], data_source_name))
                 if source['dataType']['name'] == data_source_name:
                     custom_data_sources[data_source_name]["created"] = True
         for data_source_name in custom_data_sources.keys():
