@@ -8,7 +8,10 @@ def print_data_sources(data_sources):
                 field['name'],
                 "(optional)" if 'optional' in field and field['optional'] else ""))
         if 'application' in source:
-            print("App: " + source['application']['packageName'])
+            if 'packageName' in source['application']:
+                print("App: " + source['application']['packageName'])
+            if 'name' in source['application']:
+                print("Application name: " + source['application']['name'])
         if 'device' in source:
             print("Gerät: {} - {} (Typ: {} mit uid: {})".format(
                 source['device']['manufacturer'],

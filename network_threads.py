@@ -4,7 +4,7 @@ from __future__ import division, print_function, unicode_literals, absolute_impo
 from threading import Thread
 from PyQt5.QtCore import QObject, pyqtSignal
 from datetime import datetime, timedelta
-from google_fit_activity_types import activity_map
+import json
 
 
 class GoogleFitAPIRequestThread(Thread, QObject):
@@ -85,6 +85,95 @@ class LoadWeights(GoogleFitAPIRequestThread):
                     })
         self.data_loaded.emit(weights)
         super(LoadWeights, self).run()
+
+
+class LoadNutrition(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, data_sources, *args, time_window=timedelta(days=365)):
+        super(LoadWeights, self).__init__(google_fit, *args)
+        self.data_sources = data_sources
+        self.time_window = time_window
+
+    def run(self):
+        raw_nutrition_data = []
+        for source in self.data_sources:
+            if source['dataType']['name'] == "com.google.nutrition":
+                response = self.google_fit.get(
+                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                    source['dataStreamId'] + "/datasets/" +
+                    str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
+                    str(int(datetime.now().timestamp() * 1000000000)))
+                raw_nutrition_data.append(response.json())
+        self.data_loaded.emit(raw_nutrition_data)
+        super(LoadNutrition, self).run()
+
+
+class LoadHeight(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, data_sources, *args, time_window=timedelta(days=365*100)):
+        super(LoadHeight, self).__init__(google_fit, *args)
+        self.data_sources = data_sources
+        self.time_window = time_window
+
+    def run(self):
+        raw_height_data = []
+        for source in self.data_sources:
+            if source['dataType']['name'] == "com.google.height":
+                response = self.google_fit.get(
+                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                    source['dataStreamId'] + "/datasets/" +
+                    str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
+                    str(int(datetime.now().timestamp() * 1000000000)))
+                raw_height_data.append(response.json())
+        self.data_loaded.emit(raw_height_data)
+        super(LoadHeight, self).run()
+
+
+class CreateDataSource(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, data_source_name, *args, data_source_type="floatPoint"):
+        super(CreateDataSource, self).__init__(google_fit, *args)
+        self.data_source_name = data_source_name
+        self.data_source_type = data_source_type
+
+    def run(self):
+        data = {
+            "name": "fit.py-" + self.data_source_name.rsplit(".", 1)[1],
+            "type": "raw",
+            "dataType": {
+                "name": self.data_source_name,
+                "field": [
+                    {
+                        "name": self.data_source_name.rsplit(".", 1)[1],
+                        "format": self.data_source_type
+                    }
+                ]
+            },
+            "application": {
+                "name": "fit.py",
+                "version": "1.0"
+            },
+        }
+        with open("client_id.json", 'r') as f:
+            developer_project_number = json.load(f)['installed']['client_id'].split('-', 1)[0]
+        data["dataStreamId"] = ":".join([data["type"], data["dataType"]["name"], developer_project_number])
+        response = self.google_fit.post(
+            "https://www.googleapis.com/fitness/v1/users/me/dataSources", json=data)
+        self.data_loaded.emit([response.json()])
+        super(CreateDataSource, self).run()
+
+
+class WriteAge(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, age_data_source, *args):
+        super(WriteAge, self).__init__(google_fit, *args)
+        self.age_data_source = age_data_source
+
+    def run(self):
+        response = self.google_fit.patch(
+            "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+            self.age_data_source['dataSourceId'] + "/datasets/" +
+            self.age_data_source['minStartTimeNs'] + '-' +
+            self.age_data_source['maxEndTimeNs'],
+            json=self.age_data_source)
+        self.data_loaded.emit([response.json()])
+        super(WriteAge, self).run()
 
 
 class WriteWorkout(GoogleFitAPIRequestThread):

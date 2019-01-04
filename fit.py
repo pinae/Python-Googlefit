@@ -11,7 +11,7 @@ from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights
-from network_threads import WriteWorkout, WriteCaloriesExpended
+from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
@@ -119,13 +119,14 @@ class MainWindow(QWidget):
 
     def load_data_sources_callback(self, data_sources):
         self.data_sources = data_sources
+        print_data_sources(self.data_sources)
         self.load_all_data()
-        # print_data_sources(self.data_sources)
 
     def load_all_data(self):
-        if not self.data_sources:
+        if len(self.data_sources) <= 0:
             self.load_data_sources()
         else:
+            self.check_for_custom_data_sources()
             time_window = timedelta(days=2)
             self.load_workouts(time_window)
             self.load_calories_expended(time_window)
@@ -197,6 +198,29 @@ class MainWindow(QWidget):
 
     def write_calories_expended_callback(self, calories_expended_data_source):
         print(calories_expended_data_source[0])
+
+    def check_for_custom_data_sources(self):
+        custom_data_sources = {
+            "net.pinae.fit.birthdate": {"created": False, "type": "integer"}
+        }
+        for source in self.data_sources:
+            for data_source_name in custom_data_sources.keys():
+                print("Checking if {} = {}".format(source['dataType']['name'], data_source_name))
+                if source['dataType']['name'] == data_source_name:
+                    custom_data_sources[data_source_name]["created"] = True
+        for data_source_name in custom_data_sources.keys():
+            if not custom_data_sources[data_source_name]["created"]:
+                create_data_source_thread = CreateDataSource(
+                    self.google_fit, data_source_name, data_source_type=custom_data_sources[data_source_name]["type"])
+                create_data_source_thread.data_loaded.connect(
+                    self.data_source_created_callback,
+                    type=Qt.QueuedConnection)
+                create_data_source_thread.start()
+                self.data_sources = []
+
+    def data_source_created_callback(self, response):
+        print(response)
+        self.check_for_custom_data_sources()
 
 
 if __name__ == "__main__":
