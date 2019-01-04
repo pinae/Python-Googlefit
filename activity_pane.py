@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSpacerItem, QWidgetItem, QLabel
 from activity_widgets import ActivityDay
 from activity_tools import activities_to_days
@@ -8,8 +9,10 @@ from layout_helpers import clear_layout
 
 
 class ActivityPane(QWidget):
-    def __init__(self, translator, guesser):
-        super(ActivityPane, self).__init__()
+    save_activity_needed = pyqtSignal(dict)
+
+    def __init__(self, translator, guesser, *args):
+        super(ActivityPane, self).__init__(*args)
         self.guesser = guesser
         self.translator = translator
         self.days = []
@@ -25,6 +28,7 @@ class ActivityPane(QWidget):
             self.layout.addWidget(empty_notice)
         for day in self.days:
             day_widget = ActivityDay(day, self.guesser, self.translator)
+            day_widget.save_activity_needed.connect(self.relay_save_activity_needed)
             day_widget.setVisible(True)
             self.layout.addWidget(day_widget)
         self.layout.addStretch()
@@ -33,3 +37,6 @@ class ActivityPane(QWidget):
     def set_activities(self, activities):
         self.days = activities_to_days(activities)
         self.layout_pane()
+
+    def relay_save_activity_needed(self, activity):
+        self.save_activity_needed.emit(activity)

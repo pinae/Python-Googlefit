@@ -88,15 +88,32 @@ class LoadWeights(GoogleFitAPIRequestThread):
 
 
 class WriteWorkout(GoogleFitAPIRequestThread):
-    def __init__(self, google_fit, data_source_id, *args):
+    def __init__(self, google_fit, patched_workout_data_source, *args):
         super(WriteWorkout, self).__init__(google_fit, *args)
-        self.data_source_id = data_source_id
+        self.patched_workout_data_source = patched_workout_data_source
 
     def run(self):
         response = self.google_fit.patch(
             "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
-            self.data_source_id + "/datasets/" +
-            str()
-
-        )
+            self.patched_workout_data_source['dataSourceId'] + "/datasets/" +
+            self.patched_workout_data_source['minStartTimeNs'] + '-' +
+            self.patched_workout_data_source['maxEndTimeNs'],
+            json=self.patched_workout_data_source)
+        self.data_loaded.emit([response.json()])
         super(WriteWorkout, self).run()
+
+
+class WriteCaloriesExpended(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, patched_calories_expended_data_source, *args):
+        super(WriteCaloriesExpended, self).__init__(google_fit, *args)
+        self.patched_calories_expended_data_source = patched_calories_expended_data_source
+
+    def run(self):
+        response = self.google_fit.patch(
+            "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+            self.patched_calories_expended_data_source['dataSourceId'] + "/datasets/" +
+            self.patched_calories_expended_data_source['minStartTimeNs'] + '-' +
+            self.patched_calories_expended_data_source['maxEndTimeNs'],
+            json=self.patched_calories_expended_data_source)
+        self.data_loaded.emit([response.json()])
+        super(WriteCaloriesExpended, self).run()

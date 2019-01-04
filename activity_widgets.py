@@ -14,6 +14,8 @@ import os
 
 
 class ActivityDay(QWidget):
+    save_activity_needed = pyqtSignal(dict)
+
     def __init__(self, activities, guesser, translator, *args):
         super(ActivityDay, self).__init__(*args)
         self.activities = activities
@@ -49,6 +51,7 @@ class ActivityDay(QWidget):
             for i, activity in enumerate(self.activities):
                 if i == self.edit:
                     item_widget = EditActivity(activity, i, self.translator, self.guesser)
+                    item_widget.save_needed.connect(self.save_request)
                 else:
                     item_widget = DisplayActivity(activity, i, self.translator, self.guesser)
                     item_widget.activity_clicked.connect(self.activity_clicked)
@@ -73,6 +76,9 @@ class ActivityDay(QWidget):
         self.activities = activities
         self.activity_diagram.set_data(fill_day_with_unknown(self.activities))
         self.update_activity_list()
+
+    def save_request(self, activity):
+        self.save_activity_needed.emit(activity)
 
 
 class AbstractActivityWidget(QWidget):
@@ -105,6 +111,8 @@ class AbstractActivityWidget(QWidget):
 
 
 class EditActivity(AbstractActivityWidget):
+    save_needed = pyqtSignal(dict)
+
     def __init__(self, activity, number, translator, guesser, *args):
         self.guesser = guesser
         self.name_label = QLabel()
@@ -122,6 +130,7 @@ class EditActivity(AbstractActivityWidget):
         self.save_button = QPushButton()
         self.save_button.setText(translator.save_button)
         self.save_button.setDisabled(True)
+        self.save_button.clicked.connect(self.save_button_clicked)
         self.margins = 0, 0, 0, 0
         self.label_edit_spacing = 4
         super(EditActivity, self).__init__(activity, number, translator, *args)
@@ -181,20 +190,24 @@ class EditActivity(AbstractActivityWidget):
                 ('calories' in self.activity and abs(self.activity['calories'] - self.calories_edit.value()) > 0.01) or
                 ('calories' not in self.activity and abs(
                     self.guesser.guess_kcal(self.activity) - self.calories_edit.value()) > 0.01)):
-            changed_activity = {
-                'activity': self.name_edit.currentText(),
-                'activity_no': activity_number_map[self.name_edit.currentText()],
-                'start_time': self.start_time_edit.dateTime().toPyDateTime(),
-                'end_time': self.end_time_edit.dateTime().toPyDateTime()}
-            if (('calories' in self.activity and abs(self.activity['calories'] - self.calories_edit.value()) > 0.01) or
-                    abs(self.guesser.guess_kcal(self.activity) - self.calories_edit.value()) > 0.01):
-                changed_activity['calories'] = self.calories_edit.value()
             self.save_button.setDisabled(False)
         else:
             self.save_button.setDisabled(True)
 
     def set_activity(self, activity):
         super(EditActivity, self).set_activity(activity)
+
+    def save_button_clicked(self):
+        changed_activity = self.activity.copy()
+        changed_activity['activity'] = self.name_edit.currentText()
+        changed_activity['activity_no'] = activity_number_map[self.name_edit.currentText()]
+        changed_activity['start_time'] = self.start_time_edit.dateTime().toPyDateTime()
+        changed_activity['end_time'] = self.end_time_edit.dateTime().toPyDateTime()
+        if (('calories' in self.activity and abs(self.activity['calories'] - self.calories_edit.value()) > 0.01) or
+                abs(self.guesser.guess_kcal(self.activity) - self.calories_edit.value()) > 0.01):
+            changed_activity['calories'] = self.calories_edit.value()
+        self.activity = changed_activity
+        self.save_needed.emit(changed_activity)
 
 
 class DisplayActivity(AbstractActivityWidget):

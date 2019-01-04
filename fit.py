@@ -11,10 +11,12 @@ from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights
+from network_threads import WriteWorkout, WriteCaloriesExpended
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
 from google_fit_api_helpers import extract_workout_data, merge_calories_expended_with_workouts
+from google_fit_api_helpers import patch_raw_workouts_with_changed_activity
 from tests.print_helpers import print_weights, print_data_sources, print_workouts
 from activity_tools import clean_activities
 import json
@@ -42,6 +44,7 @@ class MainWindow(QWidget):
         guesser = CalorieGuesser(*guesser_data)
         self.activity_pane = ActivityPane(self.translator, guesser)
         self.activity_pane.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+        self.activity_pane.save_activity_needed.connect(self.save_changed_activity)
         self.activity_pane_scroll_area = QScrollArea()
         self.activity_pane_scroll_area.setWidgetResizable(True)
         self.activity_pane_scroll_area.setContentsMargins(0, 0, 0, 0)
@@ -103,7 +106,7 @@ class MainWindow(QWidget):
             client_secret=client_data['installed']['client_secret'],
             code=token)
         print(token)
-        print("Oauth finished")
+        print("--- Oauth finished ---")
         self.load_all_data()
         self.layout_window()
 
@@ -168,6 +171,32 @@ class MainWindow(QWidget):
     def load_weight_callback(self, weights):
         self.weights = weights
         # print_weights(self.weights)
+
+    def save_changed_activity(self, activity):
+        patch_res = patch_raw_workouts_with_changed_activity(self.raw_workouts, self.raw_calories_expended, activity)
+        changed_workout_data_source = patch_res[0]
+        changed_calories_expended_data_source = patch_res[1]
+        self.raw_workouts = patch_res[2]
+        self.raw_calories_expended = patch_res[3]
+        if changed_workout_data_source is not None:
+            write_workout_thread = WriteWorkout(self.google_fit, changed_workout_data_source)
+            write_workout_thread.data_loaded.connect(
+                self.write_workout_callback,
+                type=Qt.QueuedConnection)
+            write_workout_thread.start()
+        if changed_calories_expended_data_source is not None:
+            write_calories_expended_thread = WriteCaloriesExpended(self.google_fit,
+                                                                   changed_calories_expended_data_source)
+            write_calories_expended_thread.data_loaded.connect(
+                self.write_calories_expended_callback,
+                type=Qt.QueuedConnection)
+            write_calories_expended_thread.start()
+
+    def write_workout_callback(self, workout_data_source):
+        print(workout_data_source[0])
+
+    def write_calories_expended_callback(self, calories_expended_data_source):
+        print(calories_expended_data_source[0])
 
 
 if __name__ == "__main__":
