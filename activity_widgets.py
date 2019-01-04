@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QSize
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt5.QtWidgets import QDateTimeEdit, QComboBox, QDoubleSpinBox
 from activity_tools import fill_day_with_unknown
@@ -9,6 +10,7 @@ from timed_diagram import TimedActivityBlockDiagram
 from google_fit_activity_types import activity_number_map
 from layout_helpers import clear_layout
 import abc
+import os
 
 
 class ActivityDay(QWidget):
@@ -22,7 +24,12 @@ class ActivityDay(QWidget):
         self.edit = None
         self.expanded = False
         self.expand_button = QPushButton()
-        self.expand_button.setText("Expand")
+        self.expand_pixmap = QPixmap(os.path.join("pixmaps", "expand.svg"))
+        self.expand_icon = QIcon(self.expand_pixmap)
+        self.collapse_pixmap = QPixmap(os.path.join("pixmaps", "collapse.svg"))
+        self.collapse_icon = QIcon(self.collapse_pixmap)
+        self.expand_button.setIcon(self.expand_icon)
+        self.expand_button.setIconSize(QSize(48, 48))
         self.expand_button.clicked.connect(self.toggle_expanded)
         diagram_layout.addWidget(self.expand_button)
         self.activity_diagram = TimedActivityBlockDiagram(self.guesser)
@@ -50,7 +57,10 @@ class ActivityDay(QWidget):
 
     def toggle_expanded(self):
         self.expanded = not self.expanded
-        self.expand_button.setText("Collapse" if self.expanded else "Expand")
+        if self.expanded:
+            self.expand_button.setIcon(self.collapse_icon)
+        else:
+            self.expand_button.setIcon(self.expand_icon)
         if not self.expanded:
             self.edit = None
         self.update_activity_list()
