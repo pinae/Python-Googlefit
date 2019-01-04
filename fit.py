@@ -10,10 +10,11 @@ from pane_switcher import PaneSwitcher
 from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import timedelta
-from network_threads import LoadDataSources, LoadWorkouts, LoadWeights
+from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
+from google_fit_api_helpers import extract_workout_data, merge_calories_expended_with_workouts
 from tests.print_helpers import print_weights, print_data_sources, print_workouts
 from activity_tools import clean_activities
 import json
@@ -31,8 +32,11 @@ class MainWindow(QWidget):
         self.google_fit = None
         self.data_sources = []
         self.load_data_sources_thread = None
+        self.raw_workouts = []
+        self.raw_calories_expended = []
         self.workouts = []
         self.load_workouts_thread = None
+        self.load_calories_expended_thread = None
         self.weights = []
         self.load_weights_thread = None
         guesser = CalorieGuesser(*guesser_data)
@@ -119,21 +123,39 @@ class MainWindow(QWidget):
         if not self.data_sources:
             self.load_data_sources()
         else:
-            self.load_workouts()
+            time_window = timedelta(days=2)
+            self.load_workouts(time_window)
+            self.load_calories_expended(time_window)
             self.load_weight()
 
-    def load_workouts(self):
+    def load_workouts(self, time_window):
         self.load_workouts_thread = LoadWorkouts(self.google_fit, self.data_sources,
-                                                 time_window=timedelta(days=2))
+                                                 time_window=time_window)
         self.load_workouts_thread.data_loaded.connect(
             self.load_workouts_callback,
             type=Qt.QueuedConnection)
         self.load_workouts_thread.start()
 
-    def load_workouts_callback(self, workouts):
+    def load_workouts_callback(self, raw_workouts):
+        self.raw_workouts = raw_workouts
+        workouts = extract_workout_data(self.raw_workouts)
         self.workouts = clean_activities(workouts)
+        self.workouts = merge_calories_expended_with_workouts(self.raw_calories_expended, self.workouts)
         self.activity_pane.set_activities(self.workouts)
         # print_workouts(self.workouts)
+
+    def load_calories_expended(self, time_window):
+        self.load_calories_expended_thread = LoadCaloriesExpended(self.google_fit, self.data_sources,
+                                                                  time_window=time_window)
+        self.load_calories_expended_thread.data_loaded.connect(
+            self.load_calories_expended_callback,
+            type=Qt.QueuedConnection)
+        self.load_calories_expended_thread.start()
+
+    def load_calories_expended_callback(self, raw_calories_expended):
+        self.raw_calories_expended = raw_calories_expended
+        self.workouts = merge_calories_expended_with_workouts(self.raw_calories_expended, self.workouts)
+        self.activity_pane.set_activities(self.workouts)
 
     def load_weight(self):
         self.load_weights_thread = LoadWeights(self.google_fit, self.data_sources,

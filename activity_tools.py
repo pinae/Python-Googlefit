@@ -16,6 +16,8 @@ def ceil_datetime(dt):
 
 
 def activities_to_days(activities):
+    if len(activities) <= 0:
+        return []
     days = []
     current_day = []
     if ceil_datetime(activities[0]['start_time']) < activities[0]['end_time']:
