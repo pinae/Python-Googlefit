@@ -160,9 +160,9 @@ class CreateDataSource(GoogleFitAPIRequestThread):
         super(CreateDataSource, self).run()
 
 
-class WriteAge(GoogleFitAPIRequestThread):
+class WriteBirthday(GoogleFitAPIRequestThread):
     def __init__(self, google_fit, age_data_source, *args):
-        super(WriteAge, self).__init__(google_fit, *args)
+        super(WriteBirthday, self).__init__(google_fit, *args)
         self.age_data_source = age_data_source
 
     def run(self):
@@ -173,7 +173,7 @@ class WriteAge(GoogleFitAPIRequestThread):
             self.age_data_source['maxEndTimeNs'],
             json=self.age_data_source)
         self.data_loaded.emit([response.json()])
-        super(WriteAge, self).run()
+        super(WriteBirthday, self).run()
 
 
 class WriteWorkout(GoogleFitAPIRequestThread):

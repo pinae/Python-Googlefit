@@ -2,10 +2,11 @@
   "activity_end_time_label": "Endzeit:",
   "activity_name_label": "Aktivit\u00e4t:",
   "activity_start_time_label": "Startzeit:",
+  "birthday_label": "Geburtstag:",
   "calories_label": "Kalorienverbrauch:",
   "fitness_pane_title": "Fitness",
   "food_tracking_pane_title": "Food-Tracking",
   "no_activities_to_show": "Keine Aktivit\u00e4ten ...",
-  "window_title": "fit.py",
-  "save_button": "Speichern"
+  "save_button": "Speichern",
+  "window_title": "fit.py"
 }

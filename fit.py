@@ -11,7 +11,7 @@ from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights
-from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended
+from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended, WriteBirthday
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
@@ -50,6 +50,7 @@ class MainWindow(QWidget):
         self.activity_pane_scroll_area.setContentsMargins(0, 0, 0, 0)
         self.activity_pane_scroll_area.setWidget(self.activity_pane)
         self.nutrients_weight_pane = NutrientsWeightPane(self.translator)
+        self.nutrients_weight_pane.save_birthday.connect(self.save_birthday)
         self.nutrients_weight_pane_scroll_area = QScrollArea()
         self.nutrients_weight_pane_scroll_area.setWidgetResizable(True)
         self.nutrients_weight_pane_scroll_area.setContentsMargins(0, 0, 0, 0)
@@ -220,6 +221,19 @@ class MainWindow(QWidget):
     def data_source_created_callback(self, response):
         print(response)
         self.check_for_custom_data_sources()
+
+    def save_birthday(self, birthday):
+        age_data_source = {
+            "birthday": birthday
+        }
+        save_birthday_thread = WriteBirthday(self.google_fit, age_data_source)
+        save_birthday_thread.data_loaded.connect(
+            self.save_birthday_callback,
+            type=Qt.QueuedConnection)
+        save_birthday_thread.start()
+
+    def save_birthday_callback(self, response):
+        print(response)
 
 
 if __name__ == "__main__":
