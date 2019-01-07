@@ -59,7 +59,8 @@ class TimedDigram(QWidget, object):
         polygon.append(QPoint(size.width() - self.padding - 6,
                               size.height() - time_text_height - self.padding - 4))
         qp.drawPolygon(polygon, fillRule=Qt.WindingFill)
-        self.draw_x_axis_labels(qp, size, unit_text_width, time_text_height)
+        if self.x_range[1] - self.x_range[0] > timedelta(seconds=0):
+            self.draw_x_axis_labels(qp, size, unit_text_width, time_text_height)
 
     def draw_y_axis(self, qp, size):
         qp.setPen(self.gray_pen)
@@ -78,7 +79,8 @@ class TimedDigram(QWidget, object):
         polygon.append(QPoint(self.padding + unit_text_width + 1 + 4,
                               self.padding + 6))
         qp.drawPolygon(polygon, fillRule=Qt.WindingFill)
-        self.draw_y_axis_labels(qp, size, unit_text_width, time_text_height)
+        if self.y_range[1] - self.y_range[0] > 0:
+            self.draw_y_axis_labels(qp, size, unit_text_width, time_text_height)
         qp.setFont(self.font)
         qp.setPen(self.text_pen)
         qp.drawText(self.padding, self.padding + 15, self.y_unit)
