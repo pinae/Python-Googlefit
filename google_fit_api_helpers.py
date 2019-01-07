@@ -85,3 +85,22 @@ def patch_raw_workouts_with_changed_activity(raw_workouts, raw_calories_expended
                 changed_points.append(new_point)
             raw_calories_expended_item['point'] = changed_points
     return changed_workout_data_source, changed_calories_expended_data_source, raw_workouts, raw_calories_expended
+
+
+def patch_raw_birthdate(raw_birthdate, birthdate):
+    now_in_nanos = int(datetime.now().timestamp() * 1000000000)
+    raw_birthdate['maxEndTimeNs'] = str(now_in_nanos)
+    raw_birthdate['point'] = [
+        {
+            "startTimeNanos": str(now_in_nanos),
+            "endTimeNanos": str(now_in_nanos),
+            "dataTypeName": "net.pinae.fit.birthdate",
+            "originDataSourceId": raw_birthdate['dataSourceId'],
+            "value": [
+                {
+                    "intVal": str(birthdate.timestamp())
+                }
+            ]
+        }
+    ]
+    return raw_birthdate

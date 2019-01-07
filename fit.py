@@ -16,7 +16,7 @@ from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
 from google_fit_api_helpers import extract_workout_data, merge_calories_expended_with_workouts
-from google_fit_api_helpers import patch_raw_workouts_with_changed_activity
+from google_fit_api_helpers import patch_raw_workouts_with_changed_activity, patch_raw_birthdate
 from tests.print_helpers import print_weights, print_data_sources, print_workouts, print_birthday_data
 from activity_tools import clean_activities
 import json
@@ -247,25 +247,28 @@ class MainWindow(QWidget):
         if birthdate_source_id is None:
             print("ERROR: There should be a data source but it is missing!")
             return
-        age_data_source = {
-            "minStartTimeNs": str(now_in_nanos),
-            "maxEndTimeNs": str(now_in_nanos),
-            "dataSourceId": birthdate_source_id,
-            "point": [
-                {
-                    "startTimeNanos": str(now_in_nanos),
-                    "endTimeNanos": str(now_in_nanos),
-                    "dataTypeName": "net.pinae.fit.birthdate",
-                    "originDataSourceId": birthdate_source_id,
-                    "value": [
-                        {
-                            "intVal": str(birthday.timestamp())
-                        }
-                    ]
-                }
-            ]
-        }
-        save_birthday_thread = WriteBirthday(self.google_fit, age_data_source)
+        if self.raw_birthday is None:
+            birthday_data_source = {
+                "minStartTimeNs": str(now_in_nanos),
+                "maxEndTimeNs": str(now_in_nanos),
+                "dataSourceId": birthdate_source_id,
+                "point": [
+                    {
+                        "startTimeNanos": str(now_in_nanos),
+                        "endTimeNanos": str(now_in_nanos),
+                        "dataTypeName": "net.pinae.fit.birthdate",
+                        "originDataSourceId": birthdate_source_id,
+                        "value": [
+                            {
+                                "intVal": str(birthday.timestamp())
+                            }
+                        ]
+                    }
+                ]
+            }
+        else:
+            birthday_data_source = patch_raw_birthdate(self.raw_birthday, birthday)
+        save_birthday_thread = WriteBirthday(self.google_fit, birthday_data_source)
         save_birthday_thread.data_loaded.connect(
             self.save_birthday_callback,
             type=Qt.QueuedConnection)
