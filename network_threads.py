@@ -108,10 +108,9 @@ class LoadNutrition(GoogleFitAPIRequestThread):
 
 
 class LoadHeight(GoogleFitAPIRequestThread):
-    def __init__(self, google_fit, data_sources, *args, time_window=timedelta(days=365*100)):
+    def __init__(self, google_fit, data_sources, *args):
         super(LoadHeight, self).__init__(google_fit, *args)
         self.data_sources = data_sources
-        self.time_window = time_window
 
     def run(self):
         raw_height_data = []
@@ -119,12 +118,29 @@ class LoadHeight(GoogleFitAPIRequestThread):
             if source['dataType']['name'] == "com.google.height":
                 response = self.google_fit.get(
                     "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
-                    source['dataStreamId'] + "/datasets/" +
-                    str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
+                    source['dataStreamId'] + "/datasets/0-" +
                     str(int(datetime.now().timestamp() * 1000000000)))
                 raw_height_data.append(response.json())
         self.data_loaded.emit(raw_height_data)
         super(LoadHeight, self).run()
+
+
+class LoadBirthday(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, data_sources, *args):
+        super(LoadBirthday, self).__init__(google_fit, *args)
+        self.data_sources = data_sources
+
+    def run(self):
+        raw_height_data = []
+        for source in self.data_sources:
+            if source['dataType']['name'] == "net.pinae.fit.birthdate":
+                response = self.google_fit.get(
+                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                    source['dataStreamId'] + "/datasets/0-" +
+                    str(int(datetime.now().timestamp() * 1000000000)))
+                raw_height_data.append(response.json())
+        self.data_loaded.emit(raw_height_data)
+        super(LoadBirthday, self).run()
 
 
 class CreateDataSource(GoogleFitAPIRequestThread):

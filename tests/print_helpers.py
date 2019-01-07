@@ -1,3 +1,5 @@
+from datetime import datetime
+
 def print_data_sources(data_sources):
     for source in data_sources:
         print("Data source: " + source['dataStreamId'])
@@ -34,3 +36,10 @@ def print_weights(weights):
         print("Gewicht {}kg am {}.".format(
            weight['weight'],
            str(weight['time'])))
+
+
+def print_birthday_data(raw_birthday_data):
+    for entry in raw_birthday_data['point']:
+        bd = datetime.fromtimestamp(entry['value'][0]['intVal'])
+        print(" - {}: {}.{}.{}".format(datetime.fromtimestamp(int(entry["startTimeNanos"]) / 1000000000),
+                                       bd.day, bd.month, bd.year))
