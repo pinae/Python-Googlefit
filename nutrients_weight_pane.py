@@ -4,6 +4,7 @@ from __future__ import division, print_function, unicode_literals
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSpinBox, QLabel, QPushButton
 from timed_diagram import TimedLineChart
+from nutrients_list import NutrientsList
 from datetime import datetime
 from tests.test_data import weight_data
 
@@ -44,6 +45,8 @@ class NutrientsWeightPane(QWidget):
         self.weight_diagram = TimedLineChart()
         self.weight_diagram.set_data([])
         self.layout.addWidget(self.weight_diagram)
+        self.nutrients_list = NutrientsList(self.translator)
+        self.layout.addWidget(self.nutrients_list)
         self.setLayout(self.layout)
         self.check_for_birthday_change()
 
@@ -75,4 +78,11 @@ class NutrientsWeightPane(QWidget):
         self.check_for_birthday_change()
 
     def set_weight_data(self, weights):
-        self.weight_diagram.set_data(weights)
+        weight_list = []
+        for w in sorted(weights, key=lambda x: x['time']):
+            if len(weight_list) < 1 or w['time'] > weight_list[-1][0]:
+                weight_list.append((w['time'], w['weight']))
+        self.weight_diagram.set_data(weight_list)
+
+    def set_nutrient_data(self, nutrients):
+        self.nutrients_list.set_nutrients(nutrients)

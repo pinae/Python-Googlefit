@@ -11,11 +11,13 @@ from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import datetime, timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights, LoadBirthday
+from network_threads import LoadNutrition
 from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended, WriteBirthday
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
-from google_fit_api_helpers import extract_workout_data, merge_calories_expended_with_workouts
+from google_fit_api_helpers import extract_workout_data, extract_nutrient_data
+from google_fit_api_helpers import merge_calories_expended_with_workouts
 from google_fit_api_helpers import patch_raw_workouts_with_changed_activity, patch_raw_birthdate
 from google_fit_api_helpers import save_token, load_token, delete_token_file
 from tests.print_helpers import print_weights, print_data_sources, print_workouts, print_birthday_data
@@ -44,6 +46,8 @@ class MainWindow(QWidget):
         self.load_weights_thread = None
         self.raw_birthday = None
         self.load_birthday_thread = None
+        self.load_nutrients_thread = None
+        self.raw_nutrients = None
         guesser = CalorieGuesser(*guesser_data)
         self.activity_pane = ActivityPane(self.translator, guesser)
         self.activity_pane.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
@@ -155,6 +159,7 @@ class MainWindow(QWidget):
             self.load_workouts(time_window)
             self.load_calories_expended(time_window)
             self.load_weight()
+            self.load_nutrients(time_window)
 
     def load_workouts(self, time_window):
         self.load_workouts_thread = LoadWorkouts(self.google_fit, self.data_sources,
@@ -196,6 +201,7 @@ class MainWindow(QWidget):
     def load_weight_callback(self, weights):
         self.weights = weights
         # print_weights(self.weights)
+        self.nutrients_weight_pane.set_weight_data(self.weights)
 
     def load_birthday(self):
         self.load_birthday_thread = LoadBirthday(self.google_fit, self.data_sources)
@@ -209,6 +215,17 @@ class MainWindow(QWidget):
         # print_birthday_data(self.raw_birthday)
         self.nutrients_weight_pane.set_birthday(
             datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal']))
+
+    def load_nutrients(self, time_window):
+        self.load_nutrients_thread = LoadNutrition(self.google_fit, self.data_sources, time_window=time_window)
+        self.load_nutrients_thread.data_loaded.connect(
+            self.load_nutrients_callback,
+            type=Qt.QueuedConnection)
+        self.load_nutrients_thread.start()
+
+    def load_nutrients_callback(self, raw_nutrients):
+        self.raw_nutrients = raw_nutrients
+        self.nutrients_weight_pane.set_nutrient_data(extract_nutrient_data(self.raw_nutrients))
 
     def save_changed_activity(self, activity):
         patch_res = patch_raw_workouts_with_changed_activity(self.raw_workouts, self.raw_calories_expended, activity)

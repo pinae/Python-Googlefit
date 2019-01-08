@@ -28,6 +28,33 @@ def extract_workout_data(raw_workouts):
     return workouts
 
 
+def extract_nutrient_data(raw_nurient_data):
+    meal_items = []
+    for raw_data in raw_nurient_data:
+        for item in raw_data['point']:
+            meal_item = {
+                "dataSourceId": raw_data['dataSourceId'],
+                "start_time": datetime.fromtimestamp(int(item['startTimeNanos']) / 1000000000),
+                "end_time": datetime.fromtimestamp(int(item['endTimeNanos']) / 1000000000)
+            }
+            if len(item['value']) >= 2 and 'intVal' in item['value'][1]:
+                meal_item["meal_type"] = item['value'][1]['intVal']
+            if len(item['value']) >= 3 and 'stringVal' in item['value'][2]:
+                meal_item["name"] = item['value'][2]['stringVal']
+            for map_pair in item['value'][0]['mapVal']:
+                if 'fpVal' in map_pair['value']:
+                    map_value = map_pair['value']['fpVal']
+                elif 'intVal' in map_pair['value']:
+                    map_value = map_pair['value']['intVal']
+                elif 'stringVal' in map_pair['value']:
+                    map_value = map_pair['value']['stringVal']
+                else:
+                    map_value = "unable to read value"
+                meal_item[map_pair['key']] = map_value
+            meal_items.append(meal_item)
+    return meal_items
+
+
 def merge_calories_expended_with_workouts(raw_calories_expended, workouts):
     for raw_data in raw_calories_expended:
         for point in raw_data['point']:

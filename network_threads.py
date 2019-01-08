@@ -92,7 +92,7 @@ class LoadWeights(GoogleFitAPIRequestThread):
 
 class LoadNutrition(GoogleFitAPIRequestThread):
     def __init__(self, google_fit, data_sources, *args, time_window=timedelta(days=365)):
-        super(LoadWeights, self).__init__(google_fit, *args)
+        super(LoadNutrition, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
 
