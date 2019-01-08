@@ -105,3 +105,6 @@ venv.bak/
 
 # PyCharm
 .idea/
+
+# Saved token
+saved_token.json

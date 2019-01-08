@@ -18,8 +18,11 @@ class GoogleFitAPIRequestThread(Thread, QObject):
 
 class LoadDataSources(GoogleFitAPIRequestThread):
     def run(self):
-        response = self.google_fit.get("https://www.googleapis.com/fitness/v1/users/me/dataSources")
-        self.data_loaded.emit(response.json()['dataSource'])
+        try:
+            response = self.google_fit.get("https://www.googleapis.com/fitness/v1/users/me/dataSources")
+            self.data_loaded.emit(response.json()['dataSource'])
+        except ValueError:
+            self.data_loaded.emit(["ValueError"])
         super(LoadDataSources, self).run()
 
 

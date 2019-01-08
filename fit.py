@@ -17,6 +17,7 @@ from layout_helpers import clear_layout
 from tests.test_data import guesser_data
 from google_fit_api_helpers import extract_workout_data, merge_calories_expended_with_workouts
 from google_fit_api_helpers import patch_raw_workouts_with_changed_activity, patch_raw_birthdate
+from google_fit_api_helpers import save_token, load_token, delete_token_file
 from tests.print_helpers import print_weights, print_data_sources, print_workouts, print_birthday_data
 from activity_tools import clean_activities
 import json
@@ -90,26 +91,40 @@ class MainWindow(QWidget):
             client_data = json.load(f)
         with open("google_fit_api_scopes.json") as f:
             scopes = json.load(f)
-        self.google_fit = OAuth2Session(
-            client_data['installed']['client_id'], scope=scopes,
-            redirect_uri=client_data['installed']['redirect_uris'][0])
-        authorization_url, state = self.google_fit.authorization_url(
-            client_data['installed']['auth_uri'], access_type="offline", prompt="select_account")
-        self.loginBrowser.load(authorization_url)
-        self.setWindowTitle('Loading')
+        token = load_token()
+        if token is None:
+            self.google_fit = OAuth2Session(
+                client_data['installed']['client_id'], scope=scopes,
+                redirect_uri=client_data['installed']['redirect_uris'][0])
+            authorization_url, state = self.google_fit.authorization_url(
+                client_data['installed']['auth_uri'], access_type="offline", prompt="select_account")
+            self.loginBrowser.load(authorization_url)
+            self.setWindowTitle('Loading')
+        else:
+            self.google_fit = OAuth2Session(
+                client_data['installed']['client_id'], scope=scopes,
+                redirect_uri=client_data['installed']['redirect_uris'][0],
+                token=token,
+                auto_refresh_kwargs={
+                    'client_id': client_data['installed']['client_id'],
+                    'client_secret': client_data['installed']['client_secret']},
+                auto_refresh_url=client_data['installed']['token_uri'],
+                token_updater=save_token)
+            self.load_all_data()
+            self.layout_window()
 
     def change_title(self, new_title):
         self.setWindowTitle(new_title)
 
-    def process_token(self, token):
+    def process_token(self, approval_code):
         with open("client_id.json") as f:
             client_data = json.load(f)
         self.google_fit.fetch_token(
             client_data['installed']['token_uri'],
             client_secret=client_data['installed']['client_secret'],
-            code=token)
-        print(token)
+            code=approval_code)
         print("--- Oauth finished ---")
+        save_token(self.google_fit.token)
         self.load_all_data()
         self.layout_window()
 
@@ -121,9 +136,14 @@ class MainWindow(QWidget):
         self.load_data_sources_thread.start()
 
     def load_data_sources_callback(self, data_sources):
-        self.data_sources = data_sources
-        print_data_sources(self.data_sources)
-        self.load_all_data()
+        if len(data_sources) == 1 and data_sources[0] == "ValueError":
+            delete_token_file()
+            self.data_sources = []
+            self.layout_window()
+        else:
+            self.data_sources = data_sources
+            print_data_sources(self.data_sources)
+            self.load_all_data()
 
     def load_all_data(self):
         if len(self.data_sources) <= 0:
@@ -131,7 +151,7 @@ class MainWindow(QWidget):
         else:
             self.check_for_custom_data_sources()
             self.load_birthday()
-            time_window = timedelta(days=2)
+            time_window = timedelta(days=7)
             self.load_workouts(time_window)
             self.load_calories_expended(time_window)
             self.load_weight()

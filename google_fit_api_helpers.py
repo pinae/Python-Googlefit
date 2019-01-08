@@ -3,6 +3,8 @@
 from __future__ import division, print_function, unicode_literals
 from google_fit_activity_types import activity_map
 from datetime import datetime, timedelta
+import json
+import os
 
 
 def extract_workout_data(raw_workouts):
@@ -104,3 +106,21 @@ def patch_raw_birthdate(raw_birthdate, birthdate):
         }
     ]
     return raw_birthdate
+
+
+def save_token(token):
+    with open("saved_token.json", 'w') as f:
+        json.dump(token, f)
+
+
+def load_token():
+    if os.path.exists("saved_token.json"):
+        with open("saved_token.json", 'r') as f:
+            return json.load(f)
+    else:
+        return None
+
+
+def delete_token_file():
+    if os.path.exists("saved_token.json"):
+        os.remove("saved_token.json")
