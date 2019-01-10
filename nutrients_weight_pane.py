@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSpinBox, QLabel,
 from timed_diagram import TimedLineChart
 from nutrients_list import NutrientsList
 from datetime import datetime
-from tests.test_data import weight_data
 
 
 class NutrientsWeightPane(QWidget):
@@ -43,6 +42,7 @@ class NutrientsWeightPane(QWidget):
         birthday_layout.addWidget(self.save_button)
         self.layout.addLayout(birthday_layout)
         self.weight_diagram = TimedLineChart()
+        self.weight_diagram.setMinimumHeight(150)
         self.weight_diagram.set_data([])
         self.layout.addWidget(self.weight_diagram)
         self.nutrients_list = NutrientsList(self.translator)

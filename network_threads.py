@@ -16,6 +16,21 @@ class GoogleFitAPIRequestThread(Thread, QObject):
         self.google_fit = google_fit
 
 
+class SingleRequestThread(Thread):
+    def __init__(self, google_fit, callback,
+                 request_type='GET', url='https://www.googleapis.com/fitness/v1/users/me/dataSources'):
+        super(SingleRequestThread, self).__init__()
+        self.google_fit = google_fit
+        self.callback = callback
+        self.request_type = request_type
+        self.url = url
+
+    def run(self):
+        response = self.google_fit.request(method=self.request_type, url=self.url)
+        self.callback(response.json())
+        super(SingleRequestThread, self).run()
+
+
 class LoadDataSources(GoogleFitAPIRequestThread):
     def run(self):
         try:
@@ -31,19 +46,29 @@ class LoadWorkouts(GoogleFitAPIRequestThread):
         super(LoadWorkouts, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
+        self.load_threads = []
+        self.raw_workouts = []
 
     def run(self):
-        raw_workouts = []
+        self.load_threads = []
+        self.raw_workouts = []
         for source in self.data_sources:
             if source['dataType']['name'] == "com.google.activity.segment":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
-                    source['dataStreamId'] + "/datasets/" +
-                    str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
-                    str(int(datetime.now().timestamp() * 1000000000)))
-                raw_workouts.append(response.json())
-        self.data_loaded.emit(raw_workouts)
+                load_thread = SingleRequestThread(
+                    self.google_fit, self.load_callback, request_type='GET',
+                    url="https://www.googleapis.com/fitness/v1/users/me/dataSources/{}/datasets/{}-{}".format(
+                        source['dataStreamId'],
+                        int((datetime.now() - self.time_window).timestamp() * 1000000000),
+                        int(datetime.now().timestamp() * 1000000000)))
+                self.load_threads.append(load_thread)
+                load_thread.start()
+        for thread in self.load_threads:
+            thread.join()
+        self.data_loaded.emit(self.raw_workouts)
         super(LoadWorkouts, self).run()
+
+    def load_callback(self, json_data):
+        self.raw_workouts.append(json_data)
 
 
 class LoadCaloriesExpended(GoogleFitAPIRequestThread):
@@ -51,19 +76,29 @@ class LoadCaloriesExpended(GoogleFitAPIRequestThread):
         super(LoadCaloriesExpended, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
+        self.load_threads = []
+        self.raw_calories_expended = []
 
     def run(self):
-        raw_calories_expended = []
+        self.load_threads = []
+        self.raw_calories_expended = []
         for source in self.data_sources:
             if source['dataType']['name'] == "com.google.calories.expended":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                load_thread = SingleRequestThread(
+                    self.google_fit, self.load_callback, request_type='GET',
+                    url="https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
                     source['dataStreamId'] + "/datasets/" +
                     str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
                     str(int(datetime.now().timestamp() * 1000000000)))
-                raw_calories_expended.append(response.json())
-        self.data_loaded.emit(raw_calories_expended)
+                self.load_threads.append(load_thread)
+                load_thread.start()
+        for thread in self.load_threads:
+            thread.join()
+        self.data_loaded.emit(self.raw_calories_expended)
         super(LoadCaloriesExpended, self).run()
+
+    def load_callback(self, json_data):
+        self.raw_calories_expended.append(json_data)
 
 
 class LoadWeights(GoogleFitAPIRequestThread):
@@ -71,23 +106,33 @@ class LoadWeights(GoogleFitAPIRequestThread):
         super(LoadWeights, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
+        self.load_threads = []
+        self.weights = []
 
     def run(self):
-        weights = []
+        self.load_threads = []
+        self.weights = []
         for source in self.data_sources:
             if source['dataType']['name'] == "com.google.weight":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                load_thread = SingleRequestThread(
+                    self.google_fit, self.load_callback, request_type='GET',
+                    url="https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
                     source['dataStreamId'] + "/datasets/" +
                     str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
                     str(int(datetime.now().timestamp() * 1000000000)))
-                for activity in response.json()['point']:
-                    weights.append({
-                        "time": datetime.fromtimestamp(int(activity['startTimeNanos']) / 1000000000),
-                        "weight": activity['value'][0]['fpVal']
-                    })
-        self.data_loaded.emit(weights)
+                self.load_threads.append(load_thread)
+                load_thread.start()
+        for thread in self.load_threads:
+            thread.join()
+        self.data_loaded.emit(self.weights)
         super(LoadWeights, self).run()
+
+    def load_callback(self, json_data):
+        for activity in json_data['point']:
+            self.weights.append({
+                "time": datetime.fromtimestamp(int(activity['startTimeNanos']) / 1000000000),
+                "weight": activity['value'][0]['fpVal']
+            })
 
 
 class LoadNutrition(GoogleFitAPIRequestThread):
@@ -95,37 +140,57 @@ class LoadNutrition(GoogleFitAPIRequestThread):
         super(LoadNutrition, self).__init__(google_fit, *args)
         self.data_sources = data_sources
         self.time_window = time_window
+        self.load_threads = []
+        self.raw_nutrition_data = []
 
     def run(self):
-        raw_nutrition_data = []
+        self.load_threads = []
+        self.raw_nutrition_data = []
         for source in self.data_sources:
             if source['dataType']['name'] == "com.google.nutrition":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                load_thread = SingleRequestThread(
+                    self.google_fit, self.load_callback, request_type='GET',
+                    url="https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
                     source['dataStreamId'] + "/datasets/" +
                     str(int((datetime.now() - self.time_window).timestamp() * 1000000000)) + "-" +
                     str(int(datetime.now().timestamp() * 1000000000)))
-                raw_nutrition_data.append(response.json())
-        self.data_loaded.emit(raw_nutrition_data)
+                self.load_threads.append(load_thread)
+                load_thread.start()
+        for thread in self.load_threads:
+            thread.join()
+        self.data_loaded.emit(self.raw_nutrition_data)
         super(LoadNutrition, self).run()
+
+    def load_callback(self, json_data):
+        self.raw_nutrition_data.append(json_data)
 
 
 class LoadHeight(GoogleFitAPIRequestThread):
     def __init__(self, google_fit, data_sources, *args):
         super(LoadHeight, self).__init__(google_fit, *args)
         self.data_sources = data_sources
+        self.load_threads = []
+        self.raw_height_data = []
 
     def run(self):
-        raw_height_data = []
+        self.load_threads = []
+        self.raw_height_data = []
         for source in self.data_sources:
             if source['dataType']['name'] == "com.google.height":
-                response = self.google_fit.get(
-                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                load_thread = SingleRequestThread(
+                    self.google_fit, self.load_callback, request_type='GET',
+                    url="https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
                     source['dataStreamId'] + "/datasets/0-" +
                     str(int(datetime.now().timestamp() * 1000000000)))
-                raw_height_data.append(response.json())
-        self.data_loaded.emit(raw_height_data)
+                self.load_threads.append(load_thread)
+                load_thread.start()
+        for thread in self.load_threads:
+            thread.join()
+        self.data_loaded.emit(self.raw_height_data)
         super(LoadHeight, self).run()
+
+    def load_callback(self, json_data):
+        self.raw_height_data.append(json_data)
 
 
 class LoadBirthday(GoogleFitAPIRequestThread):

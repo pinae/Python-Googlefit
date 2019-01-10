@@ -11,7 +11,10 @@ class NutrientsList(QWidget):
         self.nutrients = []
         self.even_color = "#f0f0f0"
         self.odd_color = "#c0c0c0"
+        self.setContentsMargins(0, 0, 0, 0)
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
         self.setLayout(self.layout)
         self.layout_list()
 
@@ -30,9 +33,18 @@ class NutrientWidget(QWidget):
     def __init__(self, translator, nutrient, *args):
         self.translator = translator
         super(NutrientWidget, self).__init__(*args)
-        self.layout = QVBoxLayout()
-        label = QLabel()
-        label.setText("nothing")
-        self.layout.addWidget(label)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.layout = QHBoxLayout()
+        self.layout.setSpacing(2)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        name_label = QLabel()
+        name_label.setText(nutrient['name'])
+        self.layout.addWidget(name_label)
+        self.layout.addStretch()
+        kcal_label = QLabel()
+        kcal_label.setText("{:1.0f} kcal".format(nutrient['calories']) if 'calories' in nutrient else
+                           translator.incomplete_data)
+        kcal_label.setStyleSheet("font-size: 8pt; color: #505050;")
+        self.layout.addWidget(kcal_label)
         self.setLayout(self.layout)
-        print(nutrient)
+        # print(nutrient)

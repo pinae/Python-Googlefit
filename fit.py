@@ -146,7 +146,7 @@ class MainWindow(QWidget):
             self.layout_window()
         else:
             self.data_sources = data_sources
-            print_data_sources(self.data_sources)
+            # print_data_sources(self.data_sources)
             self.load_all_data()
 
     def load_all_data(self):
