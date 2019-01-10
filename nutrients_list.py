@@ -20,9 +20,13 @@ class NutrientsList(QWidget):
 
     def layout_list(self):
         for i, n in enumerate(self.nutrients):
+            nw_wrapper = QWidget()
+            nw_wrapper.setStyleSheet("background-color: {};".format(self.even_color if i % 2 == 0 else self.odd_color))
+            nw_layout = QHBoxLayout()
             nw = NutrientWidget(self.translator, n)
-            nw.setStyleSheet("background-color: {};".format(self.even_color if i % 2 == 0 else self.odd_color))
-            self.layout.addWidget(nw)
+            nw_layout.addWidget(nw)
+            nw_wrapper.setLayout(nw_layout)
+            self.layout.addWidget(nw_wrapper)
 
     def set_nutrients(self, nutrients=[]):
         self.nutrients = nutrients
