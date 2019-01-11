@@ -51,4 +51,4 @@ class NutrientWidget(QWidget):
         kcal_label.setStyleSheet("font-size: 8pt; color: #505050;")
         self.layout.addWidget(kcal_label)
         self.setLayout(self.layout)
-        # print(nutrient)
+        print(nutrient)

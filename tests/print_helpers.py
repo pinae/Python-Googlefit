@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 def print_data_sources(data_sources):
     for source in data_sources:
         print("Data source: " + source['dataStreamId'])
@@ -43,3 +44,13 @@ def print_birthday_data(raw_birthday_data):
         bd = datetime.fromtimestamp(entry['value'][0]['intVal'])
         print(" - {}: {}.{}.{}".format(datetime.fromtimestamp(int(entry["startTimeNanos"]) / 1000000000),
                                        bd.day, bd.month, bd.year))
+
+
+def print_nutrient_meal_days(days):
+    for i, day in enumerate(days):
+        print("== Tag {} ==".format(i))
+        for meal in day:
+            print(meal['name'] + ':')
+            for item in meal['items']:
+                print(" - {}: {}kcal ({})".format(item['name'], item['calories'] if 'calories' in item else '--',
+                                                   item['end_time']))
