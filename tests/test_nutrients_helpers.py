@@ -3,7 +3,6 @@
 from __future__ import division, print_function, unicode_literals
 from nutrients_helpers import distribute_nutrition_data_to_meals, filter_data_with_calories, split_days, extract_snacks
 from translator import Translator
-from tests.print_helpers import print_nutrient_meal_days
 from datetime import datetime
 import unittest
 
@@ -181,7 +180,6 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
         ]
         translator = Translator('de', base_path='..')
         result = distribute_nutrition_data_to_meals(data, translator)
-        print_nutrient_meal_days(result)
         self.assertEqual(len(result), len(expected))
         for i, day in enumerate(result):
             self.assertEqual(len(day), len(expected[i]))
