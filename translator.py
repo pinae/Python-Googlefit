@@ -12,10 +12,11 @@ class Translator(object):
     class StringNotTranslated(Exception):
         pass
 
-    def __init__(self, language='de'):
+    def __init__(self, language='de', base_path='.'):
         self.lang = language
+        self.base_path = base_path
         try:
-            with open(os.path.join("strings", "strings_" + str(self.lang)) + '.json', 'r') as f:
+            with open(os.path.join(self.base_path, "strings", "strings_" + str(self.lang)) + '.json', 'r') as f:
                 self.strings = json.load(f)
         except FileNotFoundError:
             raise self.LanguageNotFound(
@@ -28,7 +29,7 @@ class Translator(object):
             return self.strings[string]
         else:
             self.strings[string] = None
-            with open(os.path.join("strings", "strings_" + str(self.lang)) + '.json', 'w') as f:
+            with open(os.path.join(self.base_path, "strings", "strings_" + str(self.lang)) + '.json', 'w') as f:
                 json.dump(self.strings, f, indent=2, sort_keys=True)
             raise self.StringNotTranslated(
                 "The String \"{}\" was not found.".format(string) +
