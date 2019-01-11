@@ -49,17 +49,17 @@ def cluster_meals(day, translator):
     sorted_points = sorted(filter_data_with_calories(day), key=lambda x: x['calories'])
     three_meal_day_clusters = [
         [{'end_time': datetime(year=day[0]['end_time'].year, month=day[0]['end_time'].month,
-                               day=day[0]['end_time'].day, hour=8, minute=30), 'calories': 100, 'anchor': True}],
+                               day=day[0]['end_time'].day, hour=9, minute=30), 'calories': 200, 'anchor': True}],
         [{'end_time': datetime(year=day[0]['end_time'].year, month=day[0]['end_time'].month,
-                               day=day[0]['end_time'].day, hour=13, minute=30), 'calories': 100, 'anchor': True}],
+                               day=day[0]['end_time'].day, hour=12, minute=30), 'calories': 200, 'anchor': True}],
         [{'end_time': datetime(year=day[0]['end_time'].year, month=day[0]['end_time'].month,
-                               day=day[0]['end_time'].day, hour=19, minute=0), 'calories': 100, 'anchor': True}],
+                               day=day[0]['end_time'].day, hour=19, minute=0), 'calories': 200, 'anchor': True}],
     ]
     two_meal_day_clusters = [
         [{'end_time': datetime(year=day[0]['end_time'].year, month=day[0]['end_time'].month,
-                               day=day[0]['end_time'].day, hour=11, minute=0), 'calories': 150, 'anchor': True}],
+                               day=day[0]['end_time'].day, hour=10, minute=30), 'calories': 300, 'anchor': True}],
         [{'end_time': datetime(year=day[0]['end_time'].year, month=day[0]['end_time'].month,
-                               day=day[0]['end_time'].day, hour=20, minute=0), 'calories': 150, 'anchor': True}],
+                               day=day[0]['end_time'].day, hour=20, minute=0), 'calories': 300, 'anchor': True}],
     ]
     three_meal_score = timedelta(seconds=0)
     two_meal_score = timedelta(seconds=0)
@@ -162,12 +162,12 @@ def extract_snacks(day_clusters, translator):
             elif len(snacks_from_start) > 0:
                 if cluster['name'] in [translator.lunch, translator.brunch]:
                     new_clusters.append({
-                        'name': translator.afternoon_snack,
+                        'name': translator.morning_snack,
                         'items': snacks_from_start
                     })
                 elif cluster['name'] == translator.dinner:
                     new_clusters.append({
-                        'name': translator.bedtime_sweet,
+                        'name': translator.afternoon_snack,
                         'items': snacks_from_start
                     })
                 else:
@@ -211,3 +211,18 @@ def extract_snacks(day_clusters, translator):
                     'items': snacks_from_end
                 })
     return new_clusters
+
+
+def day_calorie_sum(day):
+    cal_sum = 0
+    for meal in day:
+        cal_sum += meal_calorie_sum(meal)
+    return cal_sum
+
+
+def meal_calorie_sum(meal):
+    cal_sum = 0.0
+    for item in meal['items']:
+        if 'calories' in item:
+            cal_sum += item['calories']
+    return cal_sum

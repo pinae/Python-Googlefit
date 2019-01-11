@@ -272,33 +272,33 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
     def test_bunch_day(self):
         data = [
             {
-                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=0),
-                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=0),
+                "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=0),
+                "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=0),
                 "name": "Brötchen", "calories": 250
             },
             {
-                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=1),
-                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=1),
+                "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=1),
+                "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=1),
                 "name": "Marmelade", "calories": 30
             },
             {
-                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=2),
-                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=2),
+                "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=2),
+                "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=2),
                 "name": "Orangensaft", "calories": 50
             },
             {
-                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=30),
-                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=30),
+                "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=30),
+                "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=30),
                 "name": "Räucherlachs", "calories": 116.3
             },
             {
-                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=31),
-                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=31),
+                "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=31),
+                "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=31),
                 "name": "Gouda", "calories": 90
             },
             {
-                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=32),
-                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=32),
+                "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=32),
+                "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=32),
                 "name": "Salat", "calories": 15
             },
             {
@@ -310,40 +310,52 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
                 "start_time": datetime(year=2019, month=1, day=1, hour=19, minute=1),
                 "end_time": datetime(year=2019, month=1, day=1, hour=19, minute=1),
                 "name": "Wurst", "calories": 81.2
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=1),
+                "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=1),
+                "name": "Keks", "calories": 90
             }
         ]
         expected = [
             [
                 {'name': "Brunch", 'items': [
                     {
-                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=0),
-                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=0),
+                        "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=0),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=0),
                         "name": "Brötchen", "calories": 250
                     },
                     {
-                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=1),
-                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=1),
+                        "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=1),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=1),
                         "name": "Marmelade", "calories": 30
                     },
                     {
-                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=2),
-                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=2),
+                        "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=2),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=2),
                         "name": "Orangensaft", "calories": 50
                     },
                     {
-                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=30),
-                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=30),
+                        "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=30),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=30),
                         "name": "Räucherlachs", "calories": 116.3
                     },
                     {
-                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=31),
-                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=31),
+                        "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=31),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=31),
                         "name": "Gouda", "calories": 90
                     },
                     {
-                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=32),
-                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=32),
+                        "start_time": datetime(year=2019, month=1, day=1, hour=11, minute=32),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=11, minute=32),
                         "name": "Salat", "calories": 15
+                    }
+                ]},
+                {'name': "Nachmittags-Snack", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=1),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=1),
+                        "name": "Keks", "calories": 90
                     }
                 ]},
                 {'name': "Abendessen", 'items': [
