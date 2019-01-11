@@ -8,6 +8,20 @@ import unittest
 
 
 class TestDistributeNutritionDataToMeals(unittest.TestCase):
+    def check_result_vs_expected(self, result, expected):
+        self.assertEqual(len(result), len(expected))
+        for i, day in enumerate(result):
+            self.assertEqual(len(day), len(expected[i]))
+            for j, meal in enumerate(day):
+                self.assertEqual(meal['name'], expected[i][j]['name'])
+                for k, item in enumerate(meal['items']):
+                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
+                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
+                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
+                    for key in expected[i][j]['items'][k].keys():
+                        self.assertIn(key, item)
+                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+
     def test_tree_meals_day(self):
         data = [
             {
@@ -93,17 +107,7 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
         ]
         translator = Translator('de', base_path='..')
         result = distribute_nutrition_data_to_meals(data, translator)
-        self.assertEqual(len(result), len(expected))
-        for i, day in enumerate(result):
-            for j, meal in enumerate(day):
-                self.assertEqual(meal['name'], expected[i][j]['name'])
-                for k, item in enumerate(meal['items']):
-                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
-                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
-                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
-                    for key in expected[i][j]['items'][k].keys():
-                        self.assertIn(key, item)
-                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+        self.check_result_vs_expected(result, expected)
 
     def test_only_breakfast(self):
         data = [
@@ -136,18 +140,7 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
         ]
         translator = Translator('de', base_path='..')
         result = distribute_nutrition_data_to_meals(data, translator)
-        self.assertEqual(len(result), len(expected))
-        for i, day in enumerate(result):
-            self.assertEqual(len(day), len(expected[i]))
-            for j, meal in enumerate(day):
-                self.assertEqual(meal['name'], expected[i][j]['name'])
-                for k, item in enumerate(meal['items']):
-                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
-                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
-                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
-                    for key in expected[i][j]['items'][k].keys():
-                        self.assertIn(key, item)
-                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+        self.check_result_vs_expected(result, expected)
 
     def test_only_Lunch(self):
         data = [
@@ -180,18 +173,7 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
         ]
         translator = Translator('de', base_path='..')
         result = distribute_nutrition_data_to_meals(data, translator)
-        self.assertEqual(len(result), len(expected))
-        for i, day in enumerate(result):
-            self.assertEqual(len(day), len(expected[i]))
-            for j, meal in enumerate(day):
-                self.assertEqual(meal['name'], expected[i][j]['name'])
-                for k, item in enumerate(meal['items']):
-                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
-                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
-                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
-                    for key in expected[i][j]['items'][k].keys():
-                        self.assertIn(key, item)
-                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+        self.check_result_vs_expected(result, expected)
 
     def test_no_lunch(self):
         data = [
@@ -256,18 +238,7 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
         ]
         translator = Translator('de', base_path='..')
         result = distribute_nutrition_data_to_meals(data, translator)
-        self.assertEqual(len(result), len(expected))
-        for i, day in enumerate(result):
-            self.assertEqual(len(day), len(expected[i]))
-            for j, meal in enumerate(day):
-                self.assertEqual(meal['name'], expected[i][j]['name'])
-                for k, item in enumerate(meal['items']):
-                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
-                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
-                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
-                    for key in expected[i][j]['items'][k].keys():
-                        self.assertIn(key, item)
-                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+        self.check_result_vs_expected(result, expected)
 
     def test_bunch_day(self):
         data = [
@@ -374,18 +345,257 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
         ]
         translator = Translator('de', base_path='..')
         result = distribute_nutrition_data_to_meals(data, translator)
-        self.assertEqual(len(result), len(expected))
-        for i, day in enumerate(result):
-            self.assertEqual(len(day), len(expected[i]))
-            for j, meal in enumerate(day):
-                self.assertEqual(meal['name'], expected[i][j]['name'])
-                for k, item in enumerate(meal['items']):
-                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
-                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
-                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
-                    for key in expected[i][j]['items'][k].keys():
-                        self.assertIn(key, item)
-                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+        self.check_result_vs_expected(result, expected)
+
+    def test_late_breakfast_day(self):
+        data = [
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                "name": "Müsli", "calories": 268
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                "name": "Milch", "calories": 109
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                "name": "Lamacun", "calories": 505.66
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=8),
+                "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=8),
+                "name": "Keks", "calories": 126
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=24),
+                "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=24),
+                "name": "Doppelkekse", "calories": 77
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=34),
+                "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=34),
+                "name": "Biscuits", "calories": 114
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=52),
+                "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=52),
+                "name": "Doppelkekse", "calories": 191
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=18, minute=37),
+                "end_time": datetime(year=2019, month=1, day=1, hour=18, minute=37),
+                "name": "Keks", "calories": 63
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=23, minute=0),
+                "end_time": datetime(year=2019, month=1, day=1, hour=23, minute=0),
+                "name": "Brot", "calories": 167
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=23, minute=1),
+                "end_time": datetime(year=2019, month=1, day=1, hour=23, minute=1),
+                "name": "Wurst", "calories": 81.2
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=2, hour=2, minute=1),
+                "end_time": datetime(year=2019, month=1, day=2, hour=2, minute=1),
+                "name": "Keks", "calories": 90
+            }
+        ]
+        expected = [
+            [
+                {'name': "Frühstück", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                        "name": "Müsli", "calories": 268
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                        "name": "Milch", "calories": 109
+                    }
+                ]},
+                {'name': "Mittagessen", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                        "name": "Lamacun", "calories": 505.66
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=8),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=8),
+                        "name": "Keks", "calories": 126
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=24),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=24),
+                        "name": "Doppelkekse", "calories": 77
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=34),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=34),
+                        "name": "Biscuits", "calories": 114
+                    }
+                ]},
+                {'name': "Nachmittags-Snack", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=52),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=52),
+                        "name": "Doppelkekse", "calories": 191
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=18, minute=37),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=18, minute=37),
+                        "name": "Keks", "calories": 63
+                    }
+                ]},
+                {'name': "Abendessen", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=23, minute=0),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=23, minute=0),
+                        "name": "Brot", "calories": 167
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=23, minute=1),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=23, minute=1),
+                        "name": "Wurst", "calories": 81.2
+                    }
+                ]},
+                {'name': "Betthupferl", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=2, hour=2, minute=1),
+                        "end_time": datetime(year=2019, month=1, day=2, hour=2, minute=1),
+                        "name": "Keks", "calories": 90
+                    }
+                ]}
+            ]
+        ]
+        translator = Translator('de', base_path='..')
+        result = distribute_nutrition_data_to_meals(data, translator)
+        self.check_result_vs_expected(result, expected)
+
+    def test_late_breakfast_day2(self):
+        data = [
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                "name": "Müsli", "calories": 268
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                "name": "Milch", "calories": 109
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                "name": "Pizza", "calories": 330
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=2),
+                "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=2),
+                "name": "Keks", "calories": 63
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=14, minute=58),
+                "end_time": datetime(year=2019, month=1, day=1, hour=14, minute=58),
+                "name": "Doppelkekse", "calories": 126
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=36),
+                "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=36),
+                "name": "Biscuits", "calories": 151
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=40),
+                "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=40),
+                "name": "Doppelkekse", "calories": 103
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=16, minute=45),
+                "end_time": datetime(year=2019, month=1, day=1, hour=16, minute=45),
+                "name": "Keks", "calories": 63
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=18, minute=58),
+                "end_time": datetime(year=2019, month=1, day=1, hour=18, minute=58),
+                "name": "Brot", "calories": 63
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=18, minute=59),
+                "end_time": datetime(year=2019, month=1, day=1, hour=18, minute=59),
+                "name": "Wurst", "calories": 81.2
+            }
+        ]
+        expected = [
+            [
+                {'name': "Frühstück", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=8),
+                        "name": "Müsli", "calories": 268
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=10, minute=9),
+                        "name": "Milch", "calories": 109
+                    }
+                ]},
+                {'name': "Mittagessen", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=12, minute=26),
+                        "name": "Pizza", "calories": 330
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=13, minute=2),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=13, minute=2),
+                        "name": "Keks", "calories": 63
+                    }
+                ]},
+                {'name': "Nachmittags-Snack", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=14, minute=58),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=14, minute=58),
+                        "name": "Doppelkekse", "calories": 126
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=36),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=36),
+                        "name": "Biscuits", "calories": 151
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=15, minute=40),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=15, minute=40),
+                        "name": "Doppelkekse", "calories": 103
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=16, minute=45),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=16, minute=45),
+                        "name": "Keks", "calories": 63
+                    }
+                ]},
+                {'name': "Abendessen", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=18, minute=58),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=18, minute=58),
+                        "name": "Brot", "calories": 63
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=18, minute=59),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=18, minute=59),
+                        "name": "Wurst", "calories": 81.2
+                    }
+                ]}
+            ]
+        ]
+        translator = Translator('de', base_path='..')
+        result = distribute_nutrition_data_to_meals(data, translator)
+        self.check_result_vs_expected(result, expected)
 
 
 class TestFilterDataWithCalories(unittest.TestCase):
