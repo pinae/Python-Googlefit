@@ -154,7 +154,10 @@ def extract_snacks(day_clusters, translator):
             snacks_from_start = sorted_items[:snacks_at_start_no]
             sorted_items = sorted_items[snacks_at_start_no:]
             pivotal_item_no -= snacks_at_start_no
-            if new_clusters[-1]['name'] in [translator.morning_snack, translator.afternoon_snack, translator.bedtime_sweet, translator.snack]:
+            if len(new_clusters) > 0 and new_clusters[-1]['name'] in [translator.morning_snack,
+                                                                      translator.afternoon_snack,
+                                                                      translator.bedtime_sweet,
+                                                                      translator.snack]:
                 new_clusters[-1]['items'] += snacks_from_start
             elif len(snacks_from_start) > 0:
                 if cluster['name'] in [translator.lunch, translator.brunch]:

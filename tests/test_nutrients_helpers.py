@@ -150,6 +150,51 @@ class TestDistributeNutritionDataToMeals(unittest.TestCase):
                         self.assertIn(key, item)
                         self.assertEqual(expected[i][j]['items'][k][key], item[key])
 
+    def test_only_Lunch(self):
+        data = [
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=20, minute=0),
+                "end_time": datetime(year=2019, month=1, day=1, hour=20, minute=0),
+                "name": "Müsli", "calories": 230
+            },
+            {
+                "start_time": datetime(year=2019, month=1, day=1, hour=20, minute=1),
+                "end_time": datetime(year=2019, month=1, day=1, hour=20, minute=1),
+                "name": "Milch", "calories": 97.37
+            }
+        ]
+        expected = [
+            [
+                {'name': "Abendessen", 'items': [
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=20, minute=0),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=20, minute=0),
+                        "name": "Müsli", "calories": 230
+                    },
+                    {
+                        "start_time": datetime(year=2019, month=1, day=1, hour=20, minute=1),
+                        "end_time": datetime(year=2019, month=1, day=1, hour=20, minute=1),
+                        "name": "Milch", "calories": 97.37
+                    }
+                ]}
+            ]
+        ]
+        translator = Translator('de', base_path='..')
+        result = distribute_nutrition_data_to_meals(data, translator)
+        print_nutrient_meal_days(result)
+        self.assertEqual(len(result), len(expected))
+        for i, day in enumerate(result):
+            self.assertEqual(len(day), len(expected[i]))
+            for j, meal in enumerate(day):
+                self.assertEqual(meal['name'], expected[i][j]['name'])
+                for k, item in enumerate(meal['items']):
+                    self.assertEqual(item['name'], expected[i][j]['items'][k]['name'])
+                    self.assertEqual(item['start_time'], expected[i][j]['items'][k]['start_time'])
+                    self.assertEqual(item['end_time'], expected[i][j]['items'][k]['end_time'])
+                    for key in expected[i][j]['items'][k].keys():
+                        self.assertIn(key, item)
+                        self.assertEqual(expected[i][j]['items'][k][key], item[key])
+
     def test_no_lunch(self):
         data = [
             {
