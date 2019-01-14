@@ -80,7 +80,7 @@ class NutrientsList(QWidget):
     def set_nutrients(self, nutrients=[]):
         self.nutrient_days = distribute_nutrition_data_to_meals(nutrients, self.translator)
         from tests.print_helpers import print_nutrient_meal_days
-        print_nutrient_meal_days(self.nutrient_days)
+        # print_nutrient_meal_days(self.nutrient_days)
         self.layout_list()
 
 

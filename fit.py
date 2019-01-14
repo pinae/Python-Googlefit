@@ -17,7 +17,7 @@ from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
 from google_fit_api_helpers import extract_workout_data, extract_nutrient_data
-from google_fit_api_helpers import merge_calories_expended_with_workouts
+from google_fit_api_helpers import merge_calories_expended_with_workouts, find_most_recent_height
 from google_fit_api_helpers import patch_raw_workouts_with_changed_activity, patch_raw_birthdate, patch_raw_sex
 from google_fit_api_helpers import save_token, load_token, delete_token_file
 from tests.print_helpers import print_weights, print_data_sources, print_workouts, print_birthday_data
@@ -48,10 +48,12 @@ class MainWindow(QWidget):
         self.load_birthday_thread = None
         self.load_sex_thread = None
         self.raw_sex_data = None
+        self.load_height_thread = None
+        self.raw_height = None
         self.load_nutrients_thread = None
         self.raw_nutrients = None
-        guesser = CalorieGuesser(*guesser_data)
-        self.activity_pane = ActivityPane(self.translator, guesser)
+        self.guesser = CalorieGuesser(*guesser_data)
+        self.activity_pane = ActivityPane(self.translator, self.guesser)
         self.activity_pane.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
         self.activity_pane.save_activity_needed.connect(self.save_changed_activity)
         self.activity_pane_scroll_area = QScrollArea()
@@ -159,6 +161,7 @@ class MainWindow(QWidget):
             self.check_for_custom_data_sources()
             self.load_birthday()
             self.load_sex()
+            self.load_height()
             time_window = timedelta(days=7)
             self.load_workouts(time_window)
             self.load_calories_expended(time_window)
@@ -206,6 +209,7 @@ class MainWindow(QWidget):
         self.weights = weights
         # print_weights(self.weights)
         self.nutrients_weight_pane.set_weight_data(self.weights)
+        self.guesser.set_weight(sorted(weights, key=lambda x: x['time'])[-1]['weight'])
 
     def load_birthday(self):
         self.load_birthday_thread = LoadBirthday(self.google_fit, self.data_sources)
@@ -218,8 +222,9 @@ class MainWindow(QWidget):
         self.raw_birthday = result_list[0]
         # print_birthday_data(self.raw_birthday)
         if len(self.raw_birthday['point']) > 0:
-            self.nutrients_weight_pane.set_birthday(
-                datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal']))
+            birthday = datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal'])
+            self.nutrients_weight_pane.set_birthday(birthday)
+            self.guesser.set_birthdate(birthday)
 
     def load_sex(self):
         self.load_sex_thread = LoadSex(self.google_fit, self.data_sources)
@@ -231,7 +236,20 @@ class MainWindow(QWidget):
     def load_sex_callback(self, result_list):
         self.raw_sex_data = result_list[0]
         if len(self.raw_sex_data['point']) > 0:
-            self.nutrients_weight_pane.set_sex(self.raw_sex_data['point'][-1]['value'][0]['intVal'])
+            sex = self.raw_sex_data['point'][-1]['value'][0]['intVal']
+            self.nutrients_weight_pane.set_sex(sex)
+            self.guesser.set_sex(sex)
+
+    def load_height(self):
+        self.load_height_thread = LoadHeight(self.google_fit, self.data_sources)
+        self.load_height_thread.data_loaded.connect(
+            self.load_height_callback,
+            type=Qt.QueuedConnection)
+        self.load_height_thread.start()
+
+    def load_height_callback(self, result_list):
+        self.raw_height = result_list
+        self.guesser.set_height(find_most_recent_height(self.raw_height))
 
     def load_nutrients(self, time_window):
         self.load_nutrients_thread = LoadNutrition(self.google_fit, self.data_sources, time_window=time_window)

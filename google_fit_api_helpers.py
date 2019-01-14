@@ -154,6 +154,18 @@ def patch_raw_sex(raw_sex_data, sex):
     return raw_sex_data
 
 
+def find_most_recent_height(raw_height_data):
+    height_datasets = []
+    for height_data_source in raw_height_data:
+        for point in height_data_source['point']:
+            dataset = {'time': datetime.fromtimestamp(int(point['endTimeNanos']) / 1000000000)}
+            if 'modifiedTimeMillis' in point:
+                dataset['time'] = datetime.fromtimestamp(int(point['modifiedTimeMillis']) / 1000)
+            dataset['height'] = point['value'][0]['fpVal']
+            height_datasets.append(dataset)
+    return sorted(height_datasets, key=lambda x: x['time'])[-1]['height']
+
+
 def save_token(token):
     with open("saved_token.json", 'w') as f:
         json.dump(token, f)

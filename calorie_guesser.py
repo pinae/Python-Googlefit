@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, unicode_literals
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 
 class CalorieGuesser(object):
@@ -151,3 +151,23 @@ class CalorieGuesser(object):
             return self.activity_met_map[activity['activity_no']] * self.bmr * (activity_duration / timedelta(hours=24))
         else:
             return self.bmr * (activity_duration / timedelta(hours=24))
+
+    def set_height(self, height_in_m):
+        self.height = height_in_m
+        self.bmr = self.mifflin_st_jeor_estimation()
+
+    def set_age(self, age_in_years):
+        self.age = age_in_years
+        self.bmr = self.mifflin_st_jeor_estimation()
+
+    def set_birthdate(self, birthdate):
+        age_delta = datetime.now() - birthdate
+        self.set_age((age_delta.days + age_delta.seconds / (24 * 60 * 60)) / 365.24219)
+
+    def set_weight(self, weight_in_kg):
+        self.mass = weight_in_kg
+        self.bmr = self.mifflin_st_jeor_estimation()
+
+    def set_sex(self, sex):
+        self.sex = sex
+        self.bmr = self.mifflin_st_jeor_estimation()
