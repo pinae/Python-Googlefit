@@ -10,6 +10,7 @@ from datetime import datetime
 
 class NutrientsWeightPane(QWidget):
     save_birthday = pyqtSignal(datetime)
+    save_sex = pyqtSignal(int)
 
     def __init__(self, translator):
         super(NutrientsWeightPane, self).__init__()
@@ -41,6 +42,16 @@ class NutrientsWeightPane(QWidget):
         self.save_button.clicked.connect(self.save_button_clicked)
         birthday_layout.addWidget(self.save_button)
         self.layout.addLayout(birthday_layout)
+        sex_layout = QHBoxLayout()
+        self.female_button = QPushButton()
+        self.female_button.setText("♀")
+        self.female_button.clicked.connect(self.female_button_clicked)
+        self.male_button = QPushButton()
+        self.male_button.setText("♂")
+        self.male_button.clicked.connect(self.male_button_clicked)
+        sex_layout.addWidget(self.female_button)
+        sex_layout.addWidget(self.male_button)
+        self.layout.addLayout(sex_layout)
         self.weight_diagram = TimedLineChart()
         self.weight_diagram.setMinimumHeight(150)
         self.weight_diagram.set_data([])
@@ -55,6 +66,14 @@ class NutrientsWeightPane(QWidget):
                                  month=self.birthday_month.value(),
                                  day=self.birthday_day.value())
         self.save_birthday.emit(self.birthday)
+
+    def female_button_clicked(self):
+        self.set_sex(0)
+        self.save_sex.emit(0)
+
+    def male_button_clicked(self):
+        self.set_sex(1)
+        self.save_sex.emit(1)
 
     def check_for_birthday_change(self):
         if self.birthday is None:
@@ -86,3 +105,7 @@ class NutrientsWeightPane(QWidget):
 
     def set_nutrient_data(self, nutrients):
         self.nutrients_list.set_nutrients(nutrients)
+
+    def set_sex(self, sex):
+        self.female_button.setEnabled(sex != 0)
+        self.male_button.setEnabled(sex != 1)
