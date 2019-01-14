@@ -210,6 +210,7 @@ class MainWindow(QWidget):
         # print_weights(self.weights)
         self.nutrients_weight_pane.set_weight_data(self.weights)
         self.guesser.set_weight(sorted(weights, key=lambda x: x['time'])[-1]['weight'])
+        self.activity_pane.layout_pane()
 
     def load_birthday(self):
         self.load_birthday_thread = LoadBirthday(self.google_fit, self.data_sources)
@@ -225,6 +226,7 @@ class MainWindow(QWidget):
             birthday = datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal'])
             self.nutrients_weight_pane.set_birthday(birthday)
             self.guesser.set_birthdate(birthday)
+            self.activity_pane.layout_pane()
 
     def load_sex(self):
         self.load_sex_thread = LoadSex(self.google_fit, self.data_sources)
@@ -239,6 +241,7 @@ class MainWindow(QWidget):
             sex = self.raw_sex_data['point'][-1]['value'][0]['intVal']
             self.nutrients_weight_pane.set_sex(sex)
             self.guesser.set_sex(sex)
+            self.activity_pane.layout_pane()
 
     def load_height(self):
         self.load_height_thread = LoadHeight(self.google_fit, self.data_sources)
@@ -250,6 +253,7 @@ class MainWindow(QWidget):
     def load_height_callback(self, result_list):
         self.raw_height = result_list
         self.guesser.set_height(find_most_recent_height(self.raw_height))
+        self.activity_pane.layout_pane()
 
     def load_nutrients(self, time_window):
         self.load_nutrients_thread = LoadNutrition(self.google_fit, self.data_sources, time_window=time_window)
@@ -348,10 +352,7 @@ class MainWindow(QWidget):
         save_birthday_thread.start()
 
     def save_birthday_callback(self, result_list):
-        self.raw_birthday = result_list[0]
-        # print_birthday_data(self.raw_birthday)
-        self.nutrients_weight_pane.set_birthday(
-            datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal']))
+        self.load_birthday_callback(result_list)
 
     def save_sex(self, sex):
         now_in_nanos = int(datetime.now().timestamp() * 1000000000)
@@ -390,8 +391,7 @@ class MainWindow(QWidget):
         save_sex_thread.start()
 
     def save_sex_callback(self, result_list):
-        self.raw_sex_data = result_list[0]
-        self.nutrients_weight_pane.set_sex(self.raw_sex_data['point'][-1]['value'][0]['intVal'])
+        self.load_sex_callback(result_list)
 
 
 if __name__ == "__main__":
