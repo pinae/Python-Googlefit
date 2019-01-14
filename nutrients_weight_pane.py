@@ -109,3 +109,9 @@ class NutrientsWeightPane(QWidget):
     def set_sex(self, sex):
         self.female_button.setEnabled(sex != 0)
         self.male_button.setEnabled(sex != 1)
+        if sex == 0:
+            self.female_button.setStyleSheet("background-color: #ef00b7;")
+            self.male_button.setStyleSheet("")
+        else:
+            self.female_button.setStyleSheet("")
+            self.male_button.setStyleSheet("background-color: #ef00b7;")
