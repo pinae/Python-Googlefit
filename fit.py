@@ -11,14 +11,14 @@ from calorie_guesser import CalorieGuesser
 from requests_oauthlib import OAuth2Session
 from datetime import datetime, timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights, LoadBirthday
-from network_threads import LoadNutrition
-from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended, WriteBirthday
+from network_threads import LoadNutrition, LoadSex, LoadHeight
+from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended, WriteBirthday, WriteSex
 from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
 from google_fit_api_helpers import extract_workout_data, extract_nutrient_data
 from google_fit_api_helpers import merge_calories_expended_with_workouts
-from google_fit_api_helpers import patch_raw_workouts_with_changed_activity, patch_raw_birthdate
+from google_fit_api_helpers import patch_raw_workouts_with_changed_activity, patch_raw_birthdate, patch_raw_sex
 from google_fit_api_helpers import save_token, load_token, delete_token_file
 from tests.print_helpers import print_weights, print_data_sources, print_workouts, print_birthday_data
 from activity_tools import clean_activities
@@ -46,6 +46,8 @@ class MainWindow(QWidget):
         self.load_weights_thread = None
         self.raw_birthday = None
         self.load_birthday_thread = None
+        self.load_sex_thread = None
+        self.raw_sex_data = None
         self.load_nutrients_thread = None
         self.raw_nutrients = None
         guesser = CalorieGuesser(*guesser_data)
@@ -58,6 +60,7 @@ class MainWindow(QWidget):
         self.activity_pane_scroll_area.setWidget(self.activity_pane)
         self.nutrients_weight_pane = NutrientsWeightPane(self.translator)
         self.nutrients_weight_pane.save_birthday.connect(self.save_birthday)
+        self.nutrients_weight_pane.save_sex.connect(self.save_sex)
         self.nutrients_weight_pane_scroll_area = QScrollArea()
         self.nutrients_weight_pane_scroll_area.setWidgetResizable(True)
         self.nutrients_weight_pane_scroll_area.setContentsMargins(0, 0, 0, 0)
@@ -155,6 +158,7 @@ class MainWindow(QWidget):
         else:
             self.check_for_custom_data_sources()
             self.load_birthday()
+            self.load_sex()
             time_window = timedelta(days=7)
             self.load_workouts(time_window)
             self.load_calories_expended(time_window)
@@ -213,8 +217,21 @@ class MainWindow(QWidget):
     def load_birthday_callback(self, result_list):
         self.raw_birthday = result_list[0]
         # print_birthday_data(self.raw_birthday)
-        self.nutrients_weight_pane.set_birthday(
-            datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal']))
+        if len(self.raw_birthday['point']) > 0:
+            self.nutrients_weight_pane.set_birthday(
+                datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal']))
+
+    def load_sex(self):
+        self.load_sex_thread = LoadSex(self.google_fit, self.data_sources)
+        self.load_sex_thread.data_loaded.connect(
+            self.load_sex_callback,
+            type=Qt.QueuedConnection)
+        self.load_sex_thread.start()
+
+    def load_sex_callback(self, result_list):
+        self.raw_sex_data = result_list[0]
+        if len(self.raw_sex_data['point']) > 0:
+            self.nutrients_weight_pane.set_sex(self.raw_sex_data['point'][-1]['value'][0]['intVal'])
 
     def load_nutrients(self, time_window):
         self.load_nutrients_thread = LoadNutrition(self.google_fit, self.data_sources, time_window=time_window)
@@ -255,7 +272,8 @@ class MainWindow(QWidget):
 
     def check_for_custom_data_sources(self):
         custom_data_sources = {
-            "net.pinae.fit.birthdate": {"created": False, "type": "integer"}
+            "net.pinae.fit.birthdate": {"created": False, "type": "integer"},
+            "net.pinae.fit.sex": {"created": False, "type": "integer"}
         }
         for source in self.data_sources:
             for data_source_name in custom_data_sources.keys():
@@ -316,6 +334,46 @@ class MainWindow(QWidget):
         # print_birthday_data(self.raw_birthday)
         self.nutrients_weight_pane.set_birthday(
             datetime.fromtimestamp(self.raw_birthday['point'][-1]['value'][0]['intVal']))
+
+    def save_sex(self, sex):
+        now_in_nanos = int(datetime.now().timestamp() * 1000000000)
+        sex_source_id = None
+        for source in reversed(self.data_sources):
+            if source['dataType']['name'] == "net.pinae.fit.sex":
+                sex_source_id = source['dataStreamId']
+        if sex_source_id is None:
+            print("ERROR: There should be a data source but it is missing!")
+            return
+        if self.raw_sex_data is None:
+            sex_data_source = {
+                "minStartTimeNs": str(now_in_nanos),
+                "maxEndTimeNs": str(now_in_nanos),
+                "dataSourceId": sex_source_id,
+                "point": [
+                    {
+                        "startTimeNanos": str(now_in_nanos),
+                        "endTimeNanos": str(now_in_nanos),
+                        "dataTypeName": "net.pinae.fit.sex",
+                        "originDataSourceId": sex_source_id,
+                        "value": [
+                            {
+                                "intVal": str(sex)
+                            }
+                        ]
+                    }
+                ]
+            }
+        else:
+            sex_data_source = patch_raw_sex(self.raw_sex_data, sex)
+        save_sex_thread = WriteSex(self.google_fit, sex_data_source)
+        save_sex_thread.data_loaded.connect(
+            self.save_sex_callback,
+            type=Qt.QueuedConnection)
+        save_sex_thread.start()
+
+    def save_sex_callback(self, result_list):
+        self.raw_sex_data = result_list[0]
+        self.nutrients_weight_pane.set_sex(self.raw_sex_data['point'][-1]['value'][0]['intVal'])
 
 
 if __name__ == "__main__":

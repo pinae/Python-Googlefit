@@ -199,16 +199,34 @@ class LoadBirthday(GoogleFitAPIRequestThread):
         self.data_sources = data_sources
 
     def run(self):
-        raw_height_data = []
+        raw_birthday_data = []
         for source in self.data_sources:
             if source['dataType']['name'] == "net.pinae.fit.birthdate":
                 response = self.google_fit.get(
                     "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
                     source['dataStreamId'] + "/datasets/0-" +
                     str(int(datetime.now().timestamp() * 1000000000)))
-                raw_height_data.append(response.json())
-        self.data_loaded.emit(raw_height_data)
+                raw_birthday_data.append(response.json())
+        self.data_loaded.emit(raw_birthday_data)
         super(LoadBirthday, self).run()
+
+
+class LoadSex(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, data_sources, *args):
+        super(LoadSex, self).__init__(google_fit, *args)
+        self.data_sources = data_sources
+
+    def run(self):
+        raw_sex_data = []
+        for source in self.data_sources:
+            if source['dataType']['name'] == "net.pinae.fit.sex":
+                response = self.google_fit.get(
+                    "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+                    source['dataStreamId'] + "/datasets/0-" +
+                    str(int(datetime.now().timestamp() * 1000000000)))
+                raw_sex_data.append(response.json())
+        self.data_loaded.emit(raw_sex_data)
+        super(LoadSex, self).run()
 
 
 class CreateDataSource(GoogleFitAPIRequestThread):
@@ -258,6 +276,22 @@ class WriteBirthday(GoogleFitAPIRequestThread):
             json=self.age_data_source)
         self.data_loaded.emit([response.json()])
         super(WriteBirthday, self).run()
+
+
+class WriteSex(GoogleFitAPIRequestThread):
+    def __init__(self, google_fit, sex_data_source, *args):
+        super(WriteSex, self).__init__(google_fit, *args)
+        self.sex_data_source = sex_data_source
+
+    def run(self):
+        response = self.google_fit.patch(
+            "https://www.googleapis.com/fitness/v1/users/me/dataSources/" +
+            self.sex_data_source['dataSourceId'] + "/datasets/" +
+            self.sex_data_source['minStartTimeNs'] + '-' +
+            self.sex_data_source['maxEndTimeNs'],
+            json=self.sex_data_source)
+        self.data_loaded.emit([response.json()])
+        super(WriteSex, self).run()
 
 
 class WriteWorkout(GoogleFitAPIRequestThread):

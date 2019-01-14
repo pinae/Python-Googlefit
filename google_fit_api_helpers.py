@@ -135,6 +135,25 @@ def patch_raw_birthdate(raw_birthdate, birthdate):
     return raw_birthdate
 
 
+def patch_raw_sex(raw_sex_data, sex):
+    now_in_nanos = int(datetime.now().timestamp() * 1000000000)
+    raw_sex_data['maxEndTimeNs'] = str(now_in_nanos)
+    raw_sex_data['point'] = [
+        {
+            "startTimeNanos": str(now_in_nanos),
+            "endTimeNanos": str(now_in_nanos),
+            "dataTypeName": "net.pinae.fit.sex",
+            "originDataSourceId": raw_sex_data['dataSourceId'],
+            "value": [
+                {
+                    "intVal": str(sex)
+                }
+            ]
+        }
+    ]
+    return raw_sex_data
+
+
 def save_token(token):
     with open("saved_token.json", 'w') as f:
         json.dump(token, f)
