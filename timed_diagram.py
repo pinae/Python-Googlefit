@@ -1,6 +1,4 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QPen, QBrush, QColor, QFont, QFontMetrics, QPolygon, QPainterPath
 from PyQt5.QtCore import QPoint, QPointF
@@ -26,7 +24,7 @@ class TimedDigram(QWidget, object):
         self.gray_pen = QPen(self.gray_line_color, 1, Qt.SolidLine)
         self.text_pen = QPen(self.axis_number_color, 1, Qt.SolidLine)
         self.gray_brush = QBrush(self.gray_line_color)
-        self.font = QFont("Helvetica", pointSize=8, weight=0, italic=0)
+        self.font = QFont("Helvetica", pointSize=8, weight=0, italic=False)
         self.fm = QFontMetrics(self.font)
 
     def paintEvent(self, *args):

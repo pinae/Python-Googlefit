@@ -1,6 +1,4 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals
 from datetime import datetime, timedelta
 from google_fit_activity_types import activity_map
 

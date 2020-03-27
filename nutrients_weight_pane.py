@@ -1,11 +1,10 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSpinBox, QLabel, QPushButton
 from timed_diagram import TimedLineChart
 from nutrients_list import NutrientsList
 from datetime import datetime
+from export_helpers import save_weight_data
 
 
 class NutrientsWeightPane(QWidget):
@@ -56,6 +55,10 @@ class NutrientsWeightPane(QWidget):
         self.weight_diagram.setMinimumHeight(150)
         self.weight_diagram.set_data([])
         self.layout.addWidget(self.weight_diagram)
+        self.save_weight_button = QPushButton()
+        self.save_weight_button.setText("Save Weight Data to CSV")
+        self.save_weight_button.clicked.connect(self.save_weight_data_to_csv)
+        self.layout.addWidget(self.save_weight_button)
         self.nutrients_list = NutrientsList(self.translator)
         self.layout.addWidget(self.nutrients_list)
         self.setLayout(self.layout)
@@ -102,6 +105,9 @@ class NutrientsWeightPane(QWidget):
             if len(weight_list) < 1 or w['time'] > weight_list[-1][0]:
                 weight_list.append((w['time'], w['weight']))
         self.weight_diagram.set_data(weight_list)
+
+    def save_weight_data_to_csv(self):
+        save_weight_data(self.weight_diagram.data)
 
     def set_nutrient_data(self, nutrients):
         self.nutrients_list.set_nutrients(nutrients)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 activity_map = {
     9: "Aerobics",
     119: "Archery",

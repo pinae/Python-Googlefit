@@ -1,11 +1,11 @@
 {
   "installed": {
-    "client_id":"987628404510-m2tmlgedmbncnvoquma1423ku36fbmtr.apps.googleusercontent.com",
-    "project_id":"flowing-access-225509",
+    "client_id":"32727419809-23ou4hs3js29oml2d99v2utug8khb0rj.apps.googleusercontent.com",
+    "project_id":"fit-py",
     "auth_uri":"https://accounts.google.com/o/oauth2/auth",
-    "token_uri":"https://www.googleapis.com/oauth2/v3/token",
+    "token_uri":"https://oauth2.googleapis.com/token",
     "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
-    "client_secret":"OCE_HW-oew6t17YkeHc7pXHZ",
+    "client_secret":"P_56GvaOnxlRZoIkZiKPNcau",
     "redirect_uris":[
       "urn:ietf:wg:oauth:2.0:oob",
       "http://localhost"

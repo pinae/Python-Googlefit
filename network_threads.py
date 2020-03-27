@@ -1,19 +1,31 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals, absolute_import
 from threading import Thread
 from PyQt5.QtCore import QObject, pyqtSignal
+from oauthlib.oauth2 import TokenExpiredError, rfc6749
 from datetime import datetime, timedelta
 import json
 
 
 class GoogleFitAPIRequestThread(Thread, QObject):
     data_loaded = pyqtSignal(list)
+    token_expired = pyqtSignal()
+    oauth_deleted = pyqtSignal()
 
     def __init__(self, google_fit, *args):
         super(GoogleFitAPIRequestThread, self).__init__()
         QObject.__init__(self, *args)
         self.google_fit = google_fit
+
+    def fit_get(self, url):
+        try:
+            try:
+                return self.google_fit.get(url)
+            except TokenExpiredError:
+                self.token_expired.emit()
+                return None
+        except rfc6749.errors.CustomOAuth2Error:
+            self.oauth_deleted.emit()
+            return None
 
 
 class SingleRequestThread(Thread):
@@ -34,7 +46,9 @@ class SingleRequestThread(Thread):
 class LoadDataSources(GoogleFitAPIRequestThread):
     def run(self):
         try:
-            response = self.google_fit.get("https://www.googleapis.com/fitness/v1/users/me/dataSources")
+            response = self.fit_get("https://www.googleapis.com/fitness/v1/users/me/dataSources")
+            if response is None:
+                return
             self.data_loaded.emit(response.json()['dataSource'])
         except ValueError:
             self.data_loaded.emit(["ValueError"])

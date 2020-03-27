@@ -1,6 +1,4 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals
 from google_fit_activity_types import activity_map
 from datetime import datetime, timedelta
 import json
@@ -127,7 +125,7 @@ def patch_raw_birthdate(raw_birthdate, birthdate):
             "originDataSourceId": raw_birthdate['dataSourceId'],
             "value": [
                 {
-                    "intVal": str(birthdate.timestamp())
+                    "intVal": str(int(birthdate.timestamp()))
                 }
             ]
         }

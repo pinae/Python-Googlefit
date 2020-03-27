@@ -1,6 +1,4 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from nutrients_helpers import distribute_nutrition_data_to_meals, day_calorie_sum, meal_calorie_sum
 from layout_helpers import clear_layout

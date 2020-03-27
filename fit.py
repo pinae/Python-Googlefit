@@ -1,9 +1,8 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, unicode_literals
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QScrollArea, QSizePolicy
 from PyQt5.QtCore import Qt
 from translator import Translator
+from login_interface_widget import LoginWindow
 from activity_pane import ActivityPane
 from nutrients_weight_pane import NutrientsWeightPane
 from pane_switcher import PaneSwitcher
@@ -13,7 +12,6 @@ from datetime import datetime, timedelta
 from network_threads import LoadDataSources, LoadWorkouts, LoadCaloriesExpended, LoadWeights, LoadBirthday
 from network_threads import LoadNutrition, LoadSex, LoadHeight
 from network_threads import CreateDataSource, WriteWorkout, WriteCaloriesExpended, WriteBirthday, WriteSex
-from browser_widget import Browser
 from layout_helpers import clear_layout
 from tests.test_data import guesser_data
 from google_fit_api_helpers import extract_workout_data, extract_nutrient_data
@@ -70,7 +68,7 @@ class MainWindow(QWidget):
         self.panes = [self.activity_pane_scroll_area, self.nutrients_weight_pane_scroll_area]
         self.pane_switcher = PaneSwitcher(self.translator)
         self.pane_switcher.pane_no_selected.connect(self.layout_window)
-        self.loginBrowser = None
+        self.loginWindow = None
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout_window()
@@ -80,7 +78,7 @@ class MainWindow(QWidget):
     def layout_window(self, active_pane_no=None):
         clear_layout(self.layout, [self.pane_switcher] + self.panes)
         if type(self.google_fit) is OAuth2Session:
-            self.loginBrowser = None
+            self.loginWindow = None
             self.layout.addWidget(self.pane_switcher)
             self.pane_switcher.setVisible(True)
             if active_pane_no is None:
@@ -89,10 +87,9 @@ class MainWindow(QWidget):
             pane.setVisible(True)
             self.layout.addWidget(pane)
         else:
-            self.loginBrowser = Browser()
-            self.loginBrowser.titleChanged.connect(self.change_title)
-            self.loginBrowser.approvalCode_received.connect(self.process_token)
-            self.layout.addWidget(self.loginBrowser)
+            self.loginWindow = LoginWindow(self.translator)
+            self.loginWindow.approvalCode_entered.connect(self.process_token)
+            self.layout.addWidget(self.loginWindow)
             self.start_google_login()
 
     def start_google_login(self):
@@ -107,7 +104,7 @@ class MainWindow(QWidget):
                 redirect_uri=client_data['installed']['redirect_uris'][0])
             authorization_url, state = self.google_fit.authorization_url(
                 client_data['installed']['auth_uri'], access_type="offline", prompt="select_account")
-            self.loginBrowser.load(authorization_url)
+            self.loginWindow.show_url(authorization_url)
             self.setWindowTitle('Loading')
         else:
             self.google_fit = OAuth2Session(
@@ -122,8 +119,15 @@ class MainWindow(QWidget):
             self.load_all_data()
             self.layout_window()
 
-    def change_title(self, new_title):
-        self.setWindowTitle(new_title)
+    def renew_expired_token(self):
+        print("Token expired. Need to renew.")
+        with open("client_id.json") as f:
+            client_data = json.load(f)
+        self.google_fit.refresh_token(
+            client_data['installed']['token_uri'],
+            client_id=client_data['installed']['client_id'],
+            client_secret=client_data['installed']['client_secret'])
+        save_token(self.google_fit.token)
 
     def process_token(self, approval_code):
         with open("client_id.json") as f:
@@ -137,8 +141,21 @@ class MainWindow(QWidget):
         self.load_all_data()
         self.layout_window()
 
+    def make_thread(self, thread_class, *args, **kwargs):
+        if thread_class is LoadDataSources:
+            thread = thread_class(self.google_fit)
+        else:
+            thread = thread_class(self.google_fit, self.data_sources, *args, **kwargs)
+        thread.token_expired.connect(
+            self.renew_expired_token,
+            type=Qt.QueuedConnection)
+        thread.oauth_deleted.connect(
+            self.start_google_login,
+            type=Qt.QueuedConnection)
+        return thread
+
     def load_data_sources(self):
-        self.load_data_sources_thread = LoadDataSources(self.google_fit)
+        self.load_data_sources_thread = self.make_thread(LoadDataSources)
         self.load_data_sources_thread.data_loaded.connect(
             self.load_data_sources_callback,
             type=Qt.QueuedConnection)
@@ -169,8 +186,7 @@ class MainWindow(QWidget):
             self.load_nutrients(time_window)
 
     def load_workouts(self, time_window):
-        self.load_workouts_thread = LoadWorkouts(self.google_fit, self.data_sources,
-                                                 time_window=time_window)
+        self.load_workouts_thread = self.make_thread(LoadWorkouts, time_window=time_window)
         self.load_workouts_thread.data_loaded.connect(
             self.load_workouts_callback,
             type=Qt.QueuedConnection)
@@ -185,8 +201,10 @@ class MainWindow(QWidget):
         # print_workouts(self.workouts)
 
     def load_calories_expended(self, time_window):
-        self.load_calories_expended_thread = LoadCaloriesExpended(self.google_fit, self.data_sources,
-                                                                  time_window=time_window)
+        self.load_calories_expended_thread = self.make_thread(LoadCaloriesExpended, time_window=time_window)
+        self.load_calories_expended_thread.token_expired.connect(
+            self.renew_expired_token,
+            type=Qt.QueuedConnection)
         self.load_calories_expended_thread.data_loaded.connect(
             self.load_calories_expended_callback,
             type=Qt.QueuedConnection)
@@ -198,8 +216,10 @@ class MainWindow(QWidget):
         self.activity_pane.set_activities(self.workouts)
 
     def load_weight(self):
-        self.load_weights_thread = LoadWeights(self.google_fit, self.data_sources,
-                                               time_window=timedelta(days=365))
+        self.load_weights_thread = self.make_thread(LoadWeights, time_window=timedelta(days=365))
+        self.load_weights_thread.token_expired.connect(
+            self.renew_expired_token,
+            type=Qt.QueuedConnection)
         self.load_weights_thread.data_loaded.connect(
             self.load_weight_callback,
             type=Qt.QueuedConnection)
@@ -213,13 +233,15 @@ class MainWindow(QWidget):
         self.activity_pane.layout_pane()
 
     def load_birthday(self):
-        self.load_birthday_thread = LoadBirthday(self.google_fit, self.data_sources)
+        self.load_birthday_thread = self.make_thread(LoadBirthday)
         self.load_birthday_thread.data_loaded.connect(
             self.load_birthday_callback,
             type=Qt.QueuedConnection)
         self.load_birthday_thread.start()
 
     def load_birthday_callback(self, result_list):
+        if len(result_list) < 1:
+            return
         self.raw_birthday = result_list[0]
         # print_birthday_data(self.raw_birthday)
         if len(self.raw_birthday['point']) > 0:
@@ -229,13 +251,15 @@ class MainWindow(QWidget):
             self.activity_pane.layout_pane()
 
     def load_sex(self):
-        self.load_sex_thread = LoadSex(self.google_fit, self.data_sources)
+        self.load_sex_thread = self.make_thread(LoadSex)
         self.load_sex_thread.data_loaded.connect(
             self.load_sex_callback,
             type=Qt.QueuedConnection)
         self.load_sex_thread.start()
 
     def load_sex_callback(self, result_list):
+        if len(result_list) < 1:
+            return
         self.raw_sex_data = result_list[0]
         if len(self.raw_sex_data['point']) > 0:
             sex = self.raw_sex_data['point'][-1]['value'][0]['intVal']
@@ -244,7 +268,7 @@ class MainWindow(QWidget):
             self.activity_pane.layout_pane()
 
     def load_height(self):
-        self.load_height_thread = LoadHeight(self.google_fit, self.data_sources)
+        self.load_height_thread = self.make_thread(LoadHeight)
         self.load_height_thread.data_loaded.connect(
             self.load_height_callback,
             type=Qt.QueuedConnection)
@@ -256,7 +280,7 @@ class MainWindow(QWidget):
         self.activity_pane.layout_pane()
 
     def load_nutrients(self, time_window):
-        self.load_nutrients_thread = LoadNutrition(self.google_fit, self.data_sources, time_window=time_window)
+        self.load_nutrients_thread = self.make_thread(LoadNutrition, time_window=time_window)
         self.load_nutrients_thread.data_loaded.connect(
             self.load_nutrients_callback,
             type=Qt.QueuedConnection)
@@ -337,7 +361,7 @@ class MainWindow(QWidget):
                         "originDataSourceId": birthdate_source_id,
                         "value": [
                             {
-                                "intVal": str(birthday.timestamp())
+                                "intVal": str(int(birthday.timestamp()))
                             }
                         ]
                     }
